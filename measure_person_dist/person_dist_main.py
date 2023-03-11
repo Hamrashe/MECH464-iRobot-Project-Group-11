@@ -1,6 +1,10 @@
 #Hamza Jimale Rasheed
 #71059950
 #MECH 464 - iRobot Project: Group 11
+#The goal of this script is to determine the distance of the person (thier face) from the camera, and the distance of
+
+#the output of this should be the distance of the person to the robot and the distance between the person and the center of the camera (error)
+
 # install opencv "pip install opencv-python"
 import cv2
 
@@ -56,6 +60,10 @@ def face_data(image):
 
 		# draw the rectangle on the face
 		cv2.rectangle(image, (x, y), (x+w, y+h), GREEN, 2)
+		#cv2.rectangle(image, (x, y), ((x+w/2), (y+h/2)), GREEN, 2)
+		#print('x = ' + str(x+w/2) + '\n')
+		print('error = ' + str(x+w/2.0 - 640/2))
+		#cv2.circle(image, (480/2,640/2), radius=0, color=(0, 0, 255), thickness=1)
 
 		# getting face width in the pixels
 		face_width = w
@@ -146,3 +154,16 @@ cap.release()
 
 # closing the windows that are opened
 cv2.destroyAllWindows()
+
+
+#Working Function 1: Getting Reference Image
+	#Step 1. drive forward  3ft
+	#Step 2. Look for person (center them in frame) (search_center_target())
+	#Step 3. Take a photo of them
+	#Step 4. Save it as a reference image
+
+#Working Function 2: Detect distance and move closer 
+	#Step 1. turn untill you see the person and center them (search_center_target())
+	#Step 2. Measure distance and move forward untill you're within the correct distance
+	
+
