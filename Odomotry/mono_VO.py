@@ -237,7 +237,7 @@ class CameraPoses():
 
 
 
-with open('Odomotry\intrinsicNew.npy', 'rb') as f:
+with open('odomotry\intrinsicNew.npy', 'rb') as f:
     intrinsic = np.load(f)
 
 
@@ -320,7 +320,7 @@ while(cap.isOpened()):
     cv2.putText(new_frame, str(np.round(cur_pose[2, 3],2)), (540,130), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 1)
     
     
-    cv2.imshow("img", new_frame)
+    #cv2.imshow("img", new_frame)
     
     #if frame_counter % 20 == 0:
         #print("FPS: ", fps)
