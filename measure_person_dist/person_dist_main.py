@@ -75,7 +75,8 @@ def face_data(image):
 
 #Takes a photo which is then used as a reference image, the return of this function is the captured frame
 def take_photo():
-    cap = cv2.VideoCapture(0) # video capture source camera (Here webcam of laptop) 
+    
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW) # video capture source camera (Here webcam of laptop) 
     ret, frame = cap.read() # return a single frame in variable `frame`
     
 	#turn off press y to save feature
@@ -93,12 +94,15 @@ def take_photo():
 
 #Orients the robot to face the person
 def search_person():
-	cap = cv2.VideoCapture(0) # video capture source camera (Here webcam of laptop) 
+	
+	cap = cv2.VideoCapture(0, cv2.CAP_DSHOW) # video capture source camera (Here webcam of laptop) 
 	while(True):
+		
 		_, frame = cap.read() # return a frame in variable `frame`
 		#cv2.imshow('img1',frame) #display the captured image
 		face_width = face_data(frame)[0]
 		error = face_data(frame)[1]
+		print(error)
 		if face_width != 0 and abs(error) < 20:
 			#cv2.imshow('img1',frame) #display the captured image
 			#slowly rotate, perhaps rotation is proportional to angular velocity
@@ -131,7 +135,7 @@ def meas_dist():
 
 	# initialize the camera object so that we
 	# can get frame from it
-	cap = cv2.VideoCapture(0)
+	cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
 	# looping through frame, incoming from
 	# camera/video
@@ -192,7 +196,7 @@ def meas_dist():
 def calibrate_camera():
 	#Step 1. drive forward  3ft 
 	#driveForward(dist = 3ft)
-
+	
 	#Step 2. Look for person (center them in frame) (search_center_target())
 	search_person() #the robot is now facing the target
 		
@@ -208,7 +212,7 @@ def calibrate_camera():
 #Working Function 2: Detect distance and move closer 
 def maintain_dist():
 	#Step 1. turn until you see the person and center them (search_center_target())
-	search_person()
+	#search_person()
 
 
 	#Step 2. Measure distance and move forward until you're within the correct distance
@@ -221,7 +225,7 @@ def maintain_dist():
 		Known_distance, Known_width, ref_image_face_width)
 
 	print('focal length is:' + str(Focal_length_found))
-	cap = cv2.VideoCapture(0)
+	cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
 
 	while True:
