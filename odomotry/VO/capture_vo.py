@@ -55,8 +55,9 @@ def take_video():
         
             # Display the resulting frame    
             cv2.imshow('frame',frame)
-        
+            time.sleep(0.25)
             # Press Q on keyboard to stop recording
+            
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
     
@@ -87,7 +88,8 @@ def video_to_frames(vid_dir):
         
             # Display the resulting frame
             cv2.imshow('Frame',frame)
-            imgs.append(np.asarray(frame))
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            imgs.append(np.asarray(gray))
             #print('image frame\n')
             #print(imgs)
             # Press Q on keyboard to  exit
@@ -106,9 +108,14 @@ def video_to_frames(vid_dir):
     return imgs
 
 
+def write_images(imgs):
+    clear_images()
+    
+    for i in range(len(imgs)):
+        cv2.imwrite("odomotry\VO\images\i" + str(i)+'.png', imgs[i])
+        
 
-
-
+#take_video()
 
 '''
 #clear_images()

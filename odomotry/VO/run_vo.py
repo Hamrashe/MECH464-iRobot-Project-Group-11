@@ -8,12 +8,12 @@ import time
 
 from matplotlib import pyplot as plt
 
-from visualization import plotting
-from visualization.video import play_trip
+#from visualization import plotting
+#from visualization.video import play_trip
 
 from tqdm import tqdm
 
-from capture_vo import video_to_frames
+from capture_vo import video_to_frames, write_images
 import importlib
 
 #importlib.reload(video_to_frames)
@@ -22,24 +22,25 @@ import keyboard
 
 class VisualOdometry():
     
-    def __init__(self, imgs):
+    def __init__(self, img_dir):
         
         #data_dir is the directory of the images
         #print(data_dir)
-        with open('odomotry\intrinsicNew.npy', 'rb') as f:
+        with open('camera_setup\intrinsicNew.npy', 'rb') as f:
             intrinsic = np.load(f)
 
         self.K = intrinsic
         self.extrinsic = np.array(((1,0,0,0),(0,1,0,0),(0,0,1,0)))
         self.P = self.K @ self.extrinsic
-        #self.images = self._load_images('odomotry\VO\images')
-        self.images = imgs
+        self.images = self._load_images(img_dir)
+        #self.images = imgs
+
         self.orb = cv2.ORB_create(3000)
         FLANN_INDEX_LSH = 6
         index_params = dict(algorithm=FLANN_INDEX_LSH, table_number=6, key_size=12, multi_probe_level=1)
         search_params = dict(checks=50)
         self.flann = cv2.FlannBasedMatcher(indexParams=index_params, searchParams=search_params)
-        
+        self.cap = cv2.VideoCapture('odomotry\VO\playback\VO_video.avi')
         #self.world_points = []
 
         #self.current_pose = None
@@ -58,34 +59,42 @@ class VisualOdometry():
     
     def get_matches(self, i):
 
-        cv2.imwrite('odomotry\VO\playback\image1', self.images[i-1])
-        cv2.imwrite('odomotry\VO\playback\image2', self.images[i])
+        #cv2.imwrite('odomotry\VO\playback\image1', self.images[i-1])
+        #cv2.imwrite('odomotry\VO\playback\image2', self.images[i])
 
-        img1 = cv2.imread('odomotry\VO\playback\image1', cv2.IMREAD_GRAYSCALE)
-        img2 = cv2.imwrite('odomotry\VO\playback\image2', cv2.IMREAD_GRAYSCALE)
-        
-        keypoints1, descriptiors1 = self.orb.detectAndCompute(img1, None)
-        keypoints2, descriptors2 = self.orb.detectAndCompute(img2, None)
+        #img1 = cv2.imread('odomotry\VO\playback\image1', cv2.IMREAD_GRAYSCALE)
+        #img2 = cv2.imwrite('odomotry\VO\playback\image2', cv2.IMREAD_GRAYSCALE)
+        _, frame = self.cap.read()
+        cv2.imshow('Frame',frame)
+        cv2.waitKey(0)
+        keypoints1, descriptiors1 = self.orb.detectAndCompute(frame, None)
+        _, frame = self.cap.read()
+        keypoints2, descriptors2 = self.orb.detectAndCompute(frame, None)
 
         matches = self.flann.knnMatch(descriptiors1, descriptors2,k=2)
 
         good = []
         # BFMatcher with default params
-        bf = cv2.BFMatcher()
-        matches = bf.knnMatch(descriptiors1,descriptors2,k=2)
-        for m,n in matches:
-            if m.distance < 0.8*n.distance:
-                good.append(m)
+        matches = self.flann.knnMatch(descriptiors1, descriptors2, k=2)
+        try:
+            for m, n in matches:
+                if m.distance < 0.8 * n.distance:
+                    good.append(m)
+        except ValueError:
+            pass
 
 
         q1 = np.float32([ keypoints1[m.queryIdx].pt for m in good])
         q2 = np.float32([ keypoints2[m.trainIdx].pt for m in good])
 
-        draw_params = dict(matchColour = -1,
-                           singlePointColour = None,
-                           matchesMask = None,
-                           flags = 2)
-        #img3 = cv2.drawMatches(self.images[i], keypoints1, self.images[i - 1], keypoints2, good, None, **draw_params)
+        draw_params = dict(matchColor = -1, # draw matches in green color
+                 singlePointColor = None,
+                 matchesMask = None, # draw only inliers
+                 flags = 2)
+
+        img3 = cv2.drawMatches(self.images[i], keypoints1, self.images[i-1],keypoints2, good ,None,**draw_params)
+        cv2.imshow("image", img3)
+        cv2.waitKey(200)
 
         return q1, q2
     
@@ -138,7 +147,7 @@ class VisualOdometry():
         elif (max == 1):
             return R2, np.ndarray.flatten(t)
 
-def run_vo(initial_pose, imgs):
+def run_vo(initial_pose):
     # I want this function to capture images until a flag is returned, then I want it to read the images and perform odometry on them.
 
 
@@ -147,13 +156,16 @@ def run_vo(initial_pose, imgs):
     #data_dir = 'odomotry\VO\images'
     
 
-    vo = VisualOdometry(imgs)
+    vo = VisualOdometry('odomotry\VO\images')
 
     #imgs = vo._load_images('odomotry\VO\images')
     #print(imgs[1])
     #cv2.imshow('test',imgs[1])
 
     estimated_path = []
+    x = []
+    y = []
+    z = []
     for i in range(len(vo.images)):
         if i == 0:
             cur_pose = initial_pose
@@ -163,26 +175,43 @@ def run_vo(initial_pose, imgs):
             transf = vo.get_pose(q1,q2)
             cur_pose = np.matmul(cur_pose, np.linalg.inv(transf))
             print("\nThe cuurrent pose is:\n" + str(cur_pose))
-            estimated_path.append((cur_pose[0,3], cur_pose[2,3]))
+            estimated_path.append((cur_pose[0,3], cur_pose[1,3]))
+            x.append(cur_pose[0,3])
+            y.append(cur_pose[1,3])
+            z.append(cur_pose[2,3])
+            print(f'i is {i} \n')
+            #print(f'image is {}')
 
-    x = []
-    y = []
-    print(estimated_path)
-    for i, j in estimated_path:
-        x.append(i)
-        y.append(j)
-    plt.plot(x,y)
+            
+            #fig = plt.figure()
+            #ax = plt.axes(projection='3d')
+
+            
+            #ax.plot3D(x,y,z)
+            #time.sleep(1)
+            #plt.show()
+            print(cur_pose[0,3])
+
+    
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+
+            
+    ax.plot3D(x,y,z)
+        
+    #plt.plot(x,y)
     plt.show()
     #plotting.visualize_paths(estimated_path, estimated_path, "visual odometry", "VO Exercise", "plot.html")
 
 def main():
     initial_pose = [[1, 0, 0, 0,], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
 
-    imgs = np.asarray(video_to_frames('odomotry\VO\playback\VO_video.avi'))
+    imgs = video_to_frames('odomotry\VO\playback\VO_video.avi')
+    write_images(imgs)
     print(len(imgs))
-    cv2.imshow('test', imgs[0])
+    cv2.imshow('test', imgs[5])
     cv2.waitKey(0)
-    run_vo(imgs, initial_pose)
+    run_vo(initial_pose)
 
 
 main()

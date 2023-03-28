@@ -18,78 +18,81 @@ class roomba(object):
         #cur_ang = sensors.angle
         
         #Distance from wheels to center of iRobot in mm (According manual, 235 is the distance between the wheels)
-        wheel_rad = 235/2
+        wheel_rad_nom = 235/2
+        wheel_rad = wheel_rad_nom*1.218447335 #b_nom * E_b
+
         lin_vel = ang_speed*wheel_rad
+        t = abs(angle/ang_speed)
 
-        lin_vel = int(lin_vel) #Convert to int so it can be used for drive command
         
-        angle_rad = angle*(math.pi)/180.0
-        stopTimeAng = angle_rad/ang_speed
 
-        #(Left velocity, right velocity)
-        #while cur_ang < angle:
-        bot.drive_direct(-lin_vel, lin_vel)
-        time.sleep(stopTimeAng)
-        bot.drive_stop
-        #cur_ang = cur_ang + sensors.angle
+        #Assume positive angle and ang_speed is CCW
+        if ang_speed > 0:
+            #(Left velocity, right velocity)
+            roomba.drive(-lin_vel, lin_vel)
+            time.sleep(t)
+            bot.drive_stop
+
+
+            #while cur_ang < angle:
+                #bot.drive_direct(-lin_vel, lin_vel)
+                
+                #cur_ang = cur_ang + sensors.angle
+        else:
+            roomba.drive(lin_vel, -lin_vel)
+            time.sleep(t)
+            bot.drive_stop
+            #while cur_ang > angle:
+                #bot.drive_direct(lin_vel, -lin_vel)
+                
+                #cur_ang = cur_ang - sensors.angle
 
     def forward(dist, speed):
         #Initialize distance sensor, should be 0 at first
-        #cur_dist = sensors.distance
-
-        stopTime = dist/speed
-
-        #while iRobot traversal distance is less than desired distance, drive at *speed* to desired distance
-        bot.drive_direct(speed,speed)
-        time.sleep(stopTime)
+        cur_dist = sensors.distance
+        
+        t = dist/speed 
+        print('drive has begun\n')
+        roomba.drive(speed,speed)
+        #bot.drive_direct(speed, speed)
+        roomba.drive(speed, speed)
+        time.sleep(t)
         bot.drive_stop
-        
-        #Adds distances together until desired distance is traversed
-        #cur_dist = cur_dist+sensors.distance
+        print('drive has stopped\n')
+        #print(f'distance travelled {sensors.distance}')
+        '''
+        while cur_dist < dist:
+            #while iRobot traversal distance is less than desired distance, drive at *speed* to desired distance
+            bot.drive_direct(speed,speed)
+            
+            #Adds distances together until desired distance is traversed
+            cur_dist = cur_dist+sensors.distance
+        bot.drive_stop
+        '''
+    def drive(v_L_nom, v_R_nom):
+        #this function is for applying corrections before calling drive_direct
+        v_L = v_L_nom*0.879314135*1.001420845 #nominal speed * distance factor * difference in diameter scaling
+        v_R = v_R_nom*879314135*0.998579155 #nominal speed * distance factor * difference in diameter scaling
+        bot.drive_direct(v_L, v_R)
+
+    def square(L):
+        #function to drive the robot in a square for UMB calibration
+
+        roomba.forward(L,100)
+        roomba.rotate(90, 0.85)
+        roomba.forward(L,100)
+        roomba.rotate(90, 0.85)
+        roomba.forward(L,100)
+        roomba.rotate(90, 0.85)
+        roomba.forward(L,100)
+        roomba.rotate(90, 0.85)
+
     
-    def square(speed, length):
-        ang_vel = speed*math.pi()/180.0
-        roomba.forward(speed, length) #In mm and mm/s
-        roomba.rotate(90, ang_vel) #In degrees and rad/s
-        roomba.forward(speed, length) 
-        roomba.rotate(90, ang_vel)
-        roomba.forward(speed, length)
-        roomba.rotate(90, ang_vel)
-        roomba.forward(speed, length)
-        roomba.rotate(90, ang_vel)
 
-    def sound():
-        song = [72, 16] #(note, duration), ...
-        song_num = 0
-        bot.createSong(song_num, song) 
-        time.sleep(1)
-        bot.playSong(song_num)
-    
-    def odometry():
-        #update global variables of x, y, angle of robot
-        print('Interrupted')
 
-        left_encoder = sensors.encoder_counts_left
-        right_encoder = sensors.encoder_counts_right
 
-        left_distance = left_encoder * math.pi * 72.0 / 508.8 #Converts encoder counts into distance in mm
-        right_distance = right_encoder * math.pi * 72.0 / 508.8 #Converts encoder counts into distance in mm
 
-        center_distance = (left_distance+right_distance)/2 #Get new center distance
-
-        #ang_rad = angle * math.pi / 180.0
-        dtheta = (left_distance - right_distance)/235.0 #Get change in angle
-        dtheta_rad = dtheta*math.pi/180.0
-        
-        x_coord += center_distance*math.sin(dtheta) #Update x_coord from origin
-        y_coord += center_distance*math.cos(dtheta) #Update y_coord from origin
-        angle += dtheta #Update total angle away from origin y-axis in degrees
-
-        print(x_coord)
-        print(y_coord)
-        print(angle)
-        
-
+#Below if statement is from pycreate2 github, should we initialize the iRobot here?
 if __name__ == "__main__":
     # Create a Create2 Bot
     #port = '/dev/tty.usbserial-DA01NX3Z'  # this is the serial port on my iMac
