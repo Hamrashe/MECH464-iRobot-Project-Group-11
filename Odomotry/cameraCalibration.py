@@ -7,31 +7,31 @@ import glob
 ################ FIND CHESSBOARD CORNERS - OBJECT POINTS AND IMAGE POINTS #############################
 
 chessboardSize = (9,6)
-frameSize = (2560,1440)
+frameSize = (3968,2232)
 
 
-
+print('test1')
 # termination criteria
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-
+print('test1')
 # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
 objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32)
 objp[:,:2] = np.mgrid[0:chessboardSize[0],0:chessboardSize[1]].T.reshape(-1,2)
-
+print('test1')
 size_of_chessboard_squares_mm = 0.303*25.4
 objp = objp * size_of_chessboard_squares_mm
 
-
+print('test1')
 # Arrays to store object points and image points from all the images.
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 
-
-images = glob.glob('Odomotry\cal_images\*.jpg')
-
+print('test1')
+images = glob.glob('odomotry\cal_images\*.png')
+print('test1')
 for image in images:
-
+    print('test1')
     img = cv.imread(image)
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
@@ -68,13 +68,13 @@ with open('intrinsic.npy', 'wb') as f:
 
 print(cameraMatrix)
 
-img = cv.imread('Odomotry\cal_images\WIN_20230313_00_03_33_Pro.jpg')
+img = cv.imread('odomotry\cal_images\img0.png')
 h,  w = img.shape[:2]
 newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(cameraMatrix, dist, (w,h), 1, (w,h))
 
 print(newCameraMatrix)
 
-with open('Odomotry\intrinsicNew.npy', 'wb') as f:
+with open('odomotry\intrinsicNew.npy', 'wb') as f:
     np.save(f, newCameraMatrix)
 
 

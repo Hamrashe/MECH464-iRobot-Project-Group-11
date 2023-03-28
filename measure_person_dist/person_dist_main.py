@@ -1,7 +1,7 @@
 #Hamza Jimale Rasheed
 #71059950
 #MECH 464 - iRobot Project: Group 11
-#The goal of this script is to determine the distance of the person (thier face) from the camera, and the distance of
+#The goal of this script is to determine the distance of the person (their face) from the camera, and the distance of
 
 #the output of this should be the distance of the person to the robot and the distance between the person and the center of the camera (error)
 
@@ -270,7 +270,7 @@ def maintain_dist():
 
 ##############WORKING CODE BEGINS############################################################################################################################################
 
-#calibrate_camera()
+calibrate_camera()
 
 #maintain_dist()
 
