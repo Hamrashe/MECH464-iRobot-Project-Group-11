@@ -5,6 +5,14 @@ import math
 from machine import Timer
 #from pycreate2 import Create2
 
+#Constatnts
+WHEEL_DIA_CORRECTION = 0.879314135
+L_WHEEL_DIA_CORRECTION = 1.001420845
+R_WHEEL_DIA_CORRECTION = 0.998579155
+WHEEL_BASE_CORRECTION = 1.218447335
+
+
+
 #Global odometry variables
 x_coord = 0 #Positive x direction is east at the origin
 y_coord = 0 #Positive y direction is north at the origin
@@ -18,8 +26,8 @@ class roomba(object):
         #cur_ang = sensors.angle
         
         #Distance from wheels to center of iRobot in mm (According manual, 235 is the distance between the wheels)
-        wheel_rad_nom = 235/2
-        wheel_rad = wheel_rad_nom*1.218447335 #b_nom * E_b
+        wheel_rad_nom = 235/2 #mm
+        wheel_rad = wheel_rad_nom*WHEEL_BASE_CORRECTION #b_nom * E_b
 
         lin_vel = ang_speed*wheel_rad
         t = abs(angle/ang_speed)
@@ -71,8 +79,8 @@ class roomba(object):
         '''
     def drive(v_L_nom, v_R_nom):
         #this function is for applying corrections before calling drive_direct
-        v_L = v_L_nom*0.879314135*1.001420845 #nominal speed * distance factor * difference in diameter scaling
-        v_R = v_R_nom*879314135*0.998579155 #nominal speed * distance factor * difference in diameter scaling
+        v_L = v_L_nom*WHEEL_DIA_CORRECTION*L_WHEEL_DIA_CORRECTION #nominal speed * distance factor * difference in diameter scaling
+        v_R = v_R_nom*WHEEL_BASE_CORRECTION*R_WHEEL_DIA_CORRECTION #nominal speed * distance factor * difference in diameter scaling
         bot.drive_direct(v_L, v_R)
 
     def square(L):
