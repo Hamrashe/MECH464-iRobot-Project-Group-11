@@ -2,16 +2,23 @@ import serial
 import time
 import pycreate2
 import math
-from machine import Timer
 #from pycreate2 import Create2
 
 #Constatnts
 WHEEL_DIA_CORRECTION = 0.879314135
-L_WHEEL_DIA_CORRECTION = 1.001420845
-R_WHEEL_DIA_CORRECTION = 0.998579155
-WHEEL_BASE_CORRECTION = 1.218447335
+L_WHEEL_DIA_CORRECTION = 1.7
+R_WHEEL_DIA_CORRECTION = 1
+WHEEL_BASE_CORRECTION_CCW = 1.8
+WHEEL_BASE_CORRECTION_CW = 1.218447335
 
+#User inputs for constants (for adjusting odometry correction)
+WHEEL_DIA_CORRECTION = input(f'Avg wheel diameter correction factor (last was {WHEEL_DIA_CORRECTION}):')
+L_WHEEL_DIA_CORRECTION = input(f'Left wheel diameter correction factor (last was {L_WHEEL_DIA_CORRECTION}):')
+R_WHEEL_DIA_CORRECTION = input(f'Right wheel diameter correction factor (last was {R_WHEEL_DIA_CORRECTION}):')
+WHEEL_BASE_CORRECTION_CCW = input(f'Wheel base correction factor (last was {WHEEL_BASE_CORRECTION_CCW}):')
+WHEEL_BASE_CORRECTION_CW = input(f'Wheel base correction factor (last was {WHEEL_BASE_CORRECTION_CW}):')
 
+#print(f'Avg wheel diameter correction factor = {WHEEL_DIA_CORRECTION}\nLeft wheel diameter correction factor = {L_WHEEL_DIA_CORRECTION}\nRight wheel diameter correction factor = {R_WHEEL_DIA_CORRECTION}\nWheel base correction factor CCW = {WHEEL_BASE_CORRECTION_CW}\nWheel base correction factor CW = {WHEEL_BASE_CORRECTION_CW}')
 
 #Global odometry variables
 x_coord = 0 #Positive x direction is east at the origin
@@ -24,40 +31,27 @@ class roomba(object):
     def rotate(angle, ang_speed):
         #Initialize angle sensor
         #cur_ang = sensors.angle
-        
+        angle_rad = angle*math.pi/180.0
         #Distance from wheels to center of iRobot in mm (According manual, 235 is the distance between the wheels)
         wheel_rad_nom = 235/2 #mm
-        wheel_rad = wheel_rad_nom*WHEEL_BASE_CORRECTION #b_nom * E_b
+        if angle <0:
+
+            wheel_rad = wheel_rad_nom*WHEEL_BASE_CORRECTION_CCW #b_nom * E_b
 
         lin_vel = ang_speed*wheel_rad
-        t = abs(angle/ang_speed)
-
+        #t = abs(angle/ang_speed)
+        stopTimeAng = abs(angle_rad/ang_speed)
+        stopTimeAng = int(stopTimeAng)
         
-
+        roomba.drive(-lin_vel, lin_vel)
+        time.sleep(stopTimeAng)
+        bot.drive_stop
         #Assume positive angle and ang_speed is CCW
-        if ang_speed > 0:
-            #(Left velocity, right velocity)
-            roomba.drive(-lin_vel, lin_vel)
-            time.sleep(t)
-            bot.drive_stop
-
-
-            #while cur_ang < angle:
-                #bot.drive_direct(-lin_vel, lin_vel)
-                
-                #cur_ang = cur_ang + sensors.angle
-        else:
-            roomba.drive(lin_vel, -lin_vel)
-            time.sleep(t)
-            bot.drive_stop
-            #while cur_ang > angle:
-                #bot.drive_direct(lin_vel, -lin_vel)
-                
-                #cur_ang = cur_ang - sensors.angle
+       
 
     def forward(dist, speed):
         #Initialize distance sensor, should be 0 at first
-        cur_dist = sensors.distance
+        ##cur_dist = sensors.distance
         
         t = dist/speed 
         print('drive has begun\n')
@@ -68,32 +62,24 @@ class roomba(object):
         bot.drive_stop
         print('drive has stopped\n')
         #print(f'distance travelled {sensors.distance}')
-        '''
-        while cur_dist < dist:
-            #while iRobot traversal distance is less than desired distance, drive at *speed* to desired distance
-            bot.drive_direct(speed,speed)
-            
-            #Adds distances together until desired distance is traversed
-            cur_dist = cur_dist+sensors.distance
-        bot.drive_stop
-        '''
+       
     def drive(v_L_nom, v_R_nom):
         #this function is for applying corrections before calling drive_direct
         v_L = v_L_nom*WHEEL_DIA_CORRECTION*L_WHEEL_DIA_CORRECTION #nominal speed * distance factor * difference in diameter scaling
         v_R = v_R_nom*WHEEL_BASE_CORRECTION*R_WHEEL_DIA_CORRECTION #nominal speed * distance factor * difference in diameter scaling
-        bot.drive_direct(v_L, v_R)
+        bot.drive_direct(int(v_L), int(v_R))
 
-    def square(L):
+    def square(L, dir):
         #function to drive the robot in a square for UMB calibration
 
         roomba.forward(L,100)
-        roomba.rotate(90, 0.85)
+        roomba.rotate(dir*90, dir*0.85)
         roomba.forward(L,100)
-        roomba.rotate(90, 0.85)
+        roomba.rotate(dir*90, dir*0.85)
         roomba.forward(L,100)
-        roomba.rotate(90, 0.85)
+        roomba.rotate(dir*90, dir*0.85)
         roomba.forward(L,100)
-        roomba.rotate(90, 0.85)
+        roomba.rotate(dir*90, dir*0.85)
 
     
 
@@ -123,10 +109,9 @@ if __name__ == "__main__":
     print('Starting...')
 
     #Test code below
+	
+	
+    #roomba.forward(500, 100)
+    roomba.square(400, 1)
+    print(f'Avg wheel diameter correction factor = {WHEEL_DIA_CORRECTION}\nLeft wheel diameter correction factor = {L_WHEEL_DIA_CORRECTION}\nRight wheel diameter correction factor CCW= {R_WHEEL_DIA_CORRECTION}\nWheel base correction factor CCW = {WHEEL_BASE_CORRECTION_CW}\nWheel base correction factor CW =  {WHEEL_BASE_CORRECTION_CW}')
 
-    while time.time() - start_time < 10:
-
-        sensors = bot.get_sensors()
-
-        odom = Timer(0)
-        odom.init(period=1000, mode=Timer.PERIODIC, callback = odometry)
