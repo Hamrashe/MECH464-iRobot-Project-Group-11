@@ -2,16 +2,9 @@ import serial
 import time
 import pycreate2
 import math
-from machine import Timer
+import threading
+#from machine import Timer
 #from pycreate2 import Create2
-
-#Constatnts
-WHEEL_DIA_CORRECTION = 0.879314135
-L_WHEEL_DIA_CORRECTION = 1.001420845
-R_WHEEL_DIA_CORRECTION = 0.998579155
-WHEEL_BASE_CORRECTION = 1.218447335
-
-
 
 #Global odometry variables
 x_coord = 0 #Positive x direction is east at the origin
@@ -26,81 +19,78 @@ class roomba(object):
         #cur_ang = sensors.angle
         
         #Distance from wheels to center of iRobot in mm (According manual, 235 is the distance between the wheels)
-        wheel_rad_nom = 235/2 #mm
-        wheel_rad = wheel_rad_nom*WHEEL_BASE_CORRECTION #b_nom * E_b
-
+        wheel_rad = 235/2
         lin_vel = ang_speed*wheel_rad
-        t = abs(angle/ang_speed)
 
+        lin_vel = int(lin_vel) #Convert to int so it can be used for drive command
         
+        angle_rad = angle*(math.pi)/180.0
+        stopTimeAng = angle_rad/ang_speed
 
-        #Assume positive angle and ang_speed is CCW
-        if ang_speed > 0:
-            #(Left velocity, right velocity)
-            roomba.drive(-lin_vel, lin_vel)
-            time.sleep(t)
-            bot.drive_stop
-
-
-            #while cur_ang < angle:
-                #bot.drive_direct(-lin_vel, lin_vel)
-                
-                #cur_ang = cur_ang + sensors.angle
-        else:
-            roomba.drive(lin_vel, -lin_vel)
-            time.sleep(t)
-            bot.drive_stop
-            #while cur_ang > angle:
-                #bot.drive_direct(lin_vel, -lin_vel)
-                
-                #cur_ang = cur_ang - sensors.angle
+        #(Left velocity, right velocity)
+        #while cur_ang < angle:
+        bot.drive_direct(-lin_vel, lin_vel)
+        time.sleep(stopTimeAng)
+        bot.drive_stop
+        #cur_ang = cur_ang + sensors.angle
 
     def forward(dist, speed):
         #Initialize distance sensor, should be 0 at first
-        cur_dist = sensors.distance
+        #cur_dist = sensors.distance
+
+        stopTime = dist/speed
+
+        #while iRobot traversal distance is less than desired distance, drive at *speed* to desired distance
+        bot.drive_direct(speed,speed)
+        time.sleep(stopTime)
+        bot.drive_stop
         
-        t = dist/speed 
-        print('drive has begun\n')
-        roomba.drive(speed,speed)
-        #bot.drive_direct(speed, speed)
-        roomba.drive(speed, speed)
-        time.sleep(t)
-        bot.drive_stop
-        print('drive has stopped\n')
-        #print(f'distance travelled {sensors.distance}')
-        '''
-        while cur_dist < dist:
-            #while iRobot traversal distance is less than desired distance, drive at *speed* to desired distance
-            bot.drive_direct(speed,speed)
-            
-            #Adds distances together until desired distance is traversed
-            cur_dist = cur_dist+sensors.distance
-        bot.drive_stop
-        '''
-    def drive(v_L_nom, v_R_nom):
-        #this function is for applying corrections before calling drive_direct
-        v_L = v_L_nom*WHEEL_DIA_CORRECTION*L_WHEEL_DIA_CORRECTION #nominal speed * distance factor * difference in diameter scaling
-        v_R = v_R_nom*WHEEL_BASE_CORRECTION*R_WHEEL_DIA_CORRECTION #nominal speed * distance factor * difference in diameter scaling
-        bot.drive_direct(v_L, v_R)
-
-    def square(L):
-        #function to drive the robot in a square for UMB calibration
-
-        roomba.forward(L,100)
-        roomba.rotate(90, 0.85)
-        roomba.forward(L,100)
-        roomba.rotate(90, 0.85)
-        roomba.forward(L,100)
-        roomba.rotate(90, 0.85)
-        roomba.forward(L,100)
-        roomba.rotate(90, 0.85)
-
+        #Adds distances together until desired distance is traversed
+        #cur_dist = cur_dist+sensors.distance
     
+    def square(speed, length):
+        ang_vel = speed*math.pi()/180.0
+        roomba.forward(speed, length) #In mm and mm/s
+        roomba.rotate(90, ang_vel) #In degrees and rad/s
+        roomba.forward(speed, length) 
+        roomba.rotate(90, ang_vel)
+        roomba.forward(speed, length)
+        roomba.rotate(90, ang_vel)
+        roomba.forward(speed, length)
+        roomba.rotate(90, ang_vel)
 
+    def sound():
+        song = [72, 16] #(note, duration), ...
+        song_num = 0
+        bot.createSong(song_num, song) 
+        time.sleep(1)
+        bot.playSong(song_num)
+    
+    def odometry():
+        #update global variables of x, y, angle of robot
+        print('Interrupted')
 
+        left_encoder = sensors.encoder_counts_left
+        right_encoder = sensors.encoder_counts_right
 
+        left_distance = left_encoder * math.pi * 72.0 / 508.8 #Converts encoder counts into distance in mm
+        right_distance = right_encoder * math.pi * 72.0 / 508.8 #Converts encoder counts into distance in mm
 
-#Below if statement is from pycreate2 github, should we initialize the iRobot here?
+        center_distance = (left_distance+right_distance)/2 #Get new center distance
+
+        #ang_rad = angle * math.pi / 180.0
+        dtheta = (left_distance - right_distance)/235.0 #Get change in angle
+        dtheta_rad = dtheta*math.pi/180.0
+        
+        x_coord += center_distance*math.sin(dtheta) #Update x_coord from origin
+        y_coord += center_distance*math.cos(dtheta) #Update y_coord from origin
+        angle += dtheta #Update total angle away from origin y-axis in degrees
+
+        print(x_coord)
+        print(y_coord)
+        print(angle)
+        
+
 if __name__ == "__main__":
     # Create a Create2 Bot
     #port = '/dev/tty.usbserial-DA01NX3Z'  # this is the serial port on my iMac
@@ -122,11 +112,15 @@ if __name__ == "__main__":
     start_time = time.time()
     print('Starting...')
 
-    #Test code below
+    poll_time = 2.0 #How often to pull (every x seconds)
+    t = threading.Timer(poll_time, roomba.odometry)
+    t.start()
 
+    #Test code below
     while time.time() - start_time < 10:
 
         sensors = bot.get_sensors()
 
-        odom = Timer(0)
-        odom.init(period=1000, mode=Timer.PERIODIC, callback = odometry)
+        time.sleep(1)
+    
+    t.cancel()
