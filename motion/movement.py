@@ -52,7 +52,7 @@ class roomba(object):
 
         #(Left velocity, right velocity)
         #while cur_ang < angle:
-        bot.drive_direct(-lin_vel, lin_vel)
+        roomba.drive(-lin_vel, lin_vel)
         time.sleep(stopTimeAng)
         bot.drive_stop
         #cur_ang = cur_ang + sensors.angle
@@ -64,7 +64,7 @@ class roomba(object):
         stopTime = dist/speed
 
         #while iRobot traversal distance is less than desired distance, drive at *speed* to desired distance
-        bot.drive_direct(speed,speed)
+        roomba.drive(speed,speed)
         time.sleep(stopTime)
         bot.drive_stop
         print('drive has stopped\n')
