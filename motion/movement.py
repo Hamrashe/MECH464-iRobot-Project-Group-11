@@ -6,6 +6,23 @@ import threading
 #from machine import Timer
 #from pycreate2 import Create2
 
+#Constatnts
+WHEEL_DIA_CORRECTION = 0.879314135
+L_WHEEL_DIA_CORRECTION = 1
+R_WHEEL_DIA_CORRECTION = 1
+WHEEL_BASE_CORRECTION_CCW = 2.0723
+WHEEL_BASE_CORRECTION_CW =2.0723
+
+#User inputs for constants (for adjusting odometry correction)
+
+#WHEEL_DIA_CORRECTION = float(input(f'Avg wheel diameter correction factor (last was {WHEEL_DIA_CORRECTION}):'))
+#L_WHEEL_DIA_CORRECTION = float(input(f'Left wheel diameter correction factor (last was {L_WHEEL_DIA_CORRECTION}):'))
+#R_WHEEL_DIA_CORRECTION = float(input(f'Right wheel diameter correction factor (last was {R_WHEEL_DIA_CORRECTION}):'))
+#WHEEL_BASE_CORRECTION_CCW = float(input(f'Wheel base correction factor (last was {WHEEL_BASE_CORRECTION_CCW}):'))
+#WHEEL_BASE_CORRECTION_CW = float(input(f'Wheel base correction factor (last was {WHEEL_BASE_CORRECTION_CW}):'))
+
+#print(f'Avg wheel diameter correction factor = {WHEEL_DIA_CORRECTION}\nLeft wheel diameter correction factor = {L_WHEEL_DIA_CORRECTION}\nRight wheel diameter correction factor = {R_WHEEL_DIA_CORRECTION}\nWheel base correction factor CCW = {WHEEL_BASE_CORRECTION_CW}\nWheel base correction factor CW = {WHEEL_BASE_CORRECTION_CW}')
+
 #Global odometry variables
 x_coord = 0 #Positive x direction is east at the origin
 y_coord = 0 #Positive y direction is north at the origin
@@ -19,7 +36,13 @@ class roomba(object):
         #cur_ang = sensors.angle
         
         #Distance from wheels to center of iRobot in mm (According manual, 235 is the distance between the wheels)
-        wheel_rad = 235/2
+        wheel_rad_nom = 235.0/2 #mm
+        if angle <0:
+
+            wheel_rad = float(wheel_rad_nom)*WHEEL_BASE_CORRECTION_CCW #b_nom * E_b
+        else:
+            wheel_rad = float(wheel_rad_nom)*WHEEL_BASE_CORRECTION_CW
+
         lin_vel = ang_speed*wheel_rad
 
         lin_vel = int(lin_vel) #Convert to int so it can be used for drive command
@@ -44,20 +67,25 @@ class roomba(object):
         bot.drive_direct(speed,speed)
         time.sleep(stopTime)
         bot.drive_stop
-        
-        #Adds distances together until desired distance is traversed
-        #cur_dist = cur_dist+sensors.distance
-    
-    def square(speed, length):
-        ang_vel = speed*math.pi()/180.0
-        roomba.forward(speed, length) #In mm and mm/s
-        roomba.rotate(90, ang_vel) #In degrees and rad/s
-        roomba.forward(speed, length) 
-        roomba.rotate(90, ang_vel)
-        roomba.forward(speed, length)
-        roomba.rotate(90, ang_vel)
-        roomba.forward(speed, length)
-        roomba.rotate(90, ang_vel)
+        print('drive has stopped\n')
+        #print(f'distance travelled {sensors.distance}')
+       
+    def drive(v_L_nom, v_R_nom):
+        #this function is for applying corrections before calling drive_direct
+        v_L = v_L_nom*WHEEL_DIA_CORRECTION*L_WHEEL_DIA_CORRECTION #nominal speed * distance factor * difference in diameter scaling
+        v_R = v_R_nom*WHEEL_DIA_CORRECTION*R_WHEEL_DIA_CORRECTION #nominal speed * distance factor * difference in diameter scaling
+        bot.drive_direct(int(v_L), int(v_R))
+
+    def square(L, dir):
+        #function to drive the robot in a square for UMB calibration
+        roomba.forward(L,100)
+        roomba.rotate(90, 0.85)
+        roomba.forward(L,100)
+        roomba.rotate(90, 0.85)
+        roomba.forward(L,100)
+        roomba.rotate(90, 0.85)
+        roomba.forward(L,100)
+        roomba.rotate(90, 0.85)
 
     def sound():
         song = [72, 16] #(note, duration), ...
