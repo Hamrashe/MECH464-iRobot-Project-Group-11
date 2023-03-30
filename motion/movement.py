@@ -34,7 +34,7 @@ class roomba(object):
     def rotate(angle, ang_speed):
         #Initialize angle sensor
         #cur_ang = sensors.angle
-        
+        angle_rad = angle*math.pi/180.0
         #Distance from wheels to center of iRobot in mm (According manual, 235 is the distance between the wheels)
         wheel_rad_nom = 235.0/2 #mm
         if angle <0:
@@ -79,13 +79,13 @@ class roomba(object):
     def square(L, dir):
         #function to drive the robot in a square for UMB calibration
         roomba.forward(L,100)
-        roomba.rotate(90, 0.85)
+        roomba.rotate(dir*90, dir*0.85)
         roomba.forward(L,100)
-        roomba.rotate(90, 0.85)
+        roomba.rotate(dir*90, dir*0.85)
         roomba.forward(L,100)
-        roomba.rotate(90, 0.85)
+        roomba.rotate(dir*90, dir*0.85)
         roomba.forward(L,100)
-        roomba.rotate(90, 0.85)
+        roomba.rotate(dir*90, dir*0.85)
 
     def sound():
         song = [72, 16] #(note, duration), ...
