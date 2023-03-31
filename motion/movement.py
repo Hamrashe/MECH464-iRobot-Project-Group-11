@@ -2,7 +2,7 @@ import serial
 import time
 import pycreate2
 import math
-import threading
+from threading import Timer
 #from machine import Timer
 #from pycreate2 import Create2
 
@@ -94,9 +94,11 @@ class roomba(object):
         time.sleep(1)
         bot.playSong(song_num)
     
-    def odometry():
+    def odometry(bot):
         #update global variables of x, y, angle of robot
         print('Interrupted')
+
+        sensors = bot.get_sensors()
 
         left_encoder = sensors.encoder_counts_left
         right_encoder = sensors.encoder_counts_right
@@ -118,6 +120,11 @@ class roomba(object):
         print(y_coord)
         print(angle)
         
+class RepeatTimer(Timer):  
+    def run(self):  
+        while not self.finished.wait(self.interval):  
+            self.function(*self.args,**self.kwargs)  
+            print(' ')  
 
 if __name__ == "__main__":
     # Create a Create2 Bot
@@ -141,7 +148,7 @@ if __name__ == "__main__":
     print('Starting...')
 
     poll_time = 2.0 #How often to pull (every x seconds)
-    t = threading.Timer(poll_time, roomba.odometry)
+    t = RepeatTimer(1, roomba.odometry, bot)
     t.start()
 
     #Test code below
