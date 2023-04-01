@@ -6,7 +6,7 @@ import threading
 #from machine import Timer
 #from pycreate2 import Create2
 
-#Constatnts
+#Constants
 WHEEL_DIA_CORRECTION = 0.879314135
 L_WHEEL_DIA_CORRECTION = 1
 R_WHEEL_DIA_CORRECTION = 1
@@ -26,18 +26,21 @@ WHEEL_BASE_CORRECTION_CW =2.0723
 #Global odometry variables
 x_coord = 0 #Positive x direction is east at the origin
 y_coord = 0 #Positive y direction is north at the origin
-angle = 0 #Degrees from y-axis at the origin
+cur_angle = 0 #Degrees from y-axis at the origin
 
 class roomba(object):
 
     #Max speed of both wheels are 500 mm/s
-    def rotate(angle, ang_speed):
+    def rotate(des_angle, ang_speed):
         #Initialize angle sensor
         #cur_ang = sensors.angle
-        angle_rad = angle*math.pi/180.0
+        #angle_rad = angle*math.pi/180.0
         #Distance from wheels to center of iRobot in mm (According manual, 235 is the distance between the wheels)
         wheel_rad_nom = 235.0/2 #mm
-        if angle <0:
+
+        angle_diff = des_angle - cur_angle
+
+        if des_angle < 0:
 
             wheel_rad = float(wheel_rad_nom)*WHEEL_BASE_CORRECTION_CCW #b_nom * E_b
         else:
@@ -47,14 +50,15 @@ class roomba(object):
 
         lin_vel = int(lin_vel) #Convert to int so it can be used for drive command
         
-        angle_rad = angle*(math.pi)/180.0
-        stopTimeAng = angle_rad/ang_speed
+        angle_diff_rad = angle_diff*(math.pi)/180.0
+        stopTimeAng = angle_diff_rad/ang_speed
 
         #(Left velocity, right velocity)
         #while cur_ang < angle:
         roomba.drive(-lin_vel, lin_vel)
         time.sleep(stopTimeAng)
         bot.drive_stop
+        roomba.odometry()
         #cur_ang = cur_ang + sensors.angle
 
     def forward(dist, speed):
@@ -67,6 +71,7 @@ class roomba(object):
         roomba.drive(speed,speed)
         time.sleep(stopTime)
         bot.drive_stop
+        roomba.odometry()
         print('drive has stopped\n')
         #print(f'distance travelled {sensors.distance}')
        
@@ -96,7 +101,9 @@ class roomba(object):
     
     def odometry():
         #update global variables of x, y, angle of robot
-        print('Interrupted')
+        #print('Interrupted')
+
+        global x_coord, y_coord, cur_angle
 
         left_encoder = sensors.encoder_counts_left
         right_encoder = sensors.encoder_counts_right
@@ -110,13 +117,13 @@ class roomba(object):
         dtheta = (left_distance - right_distance)/235.0 #Get change in angle
         dtheta_rad = dtheta*math.pi/180.0
         
-        x_coord += center_distance*math.sin(dtheta) #Update x_coord from origin
-        y_coord += center_distance*math.cos(dtheta) #Update y_coord from origin
-        angle += dtheta #Update total angle away from origin y-axis in degrees
+        x_coord += center_distance*math.sin(dtheta_rad) #Update x_coord from origin
+        y_coord += center_distance*math.cos(dtheta_rad) #Update y_coord from origin
+        cur_angle += dtheta #Update total angle away from origin y-axis in degrees
 
         print(x_coord)
         print(y_coord)
-        print(angle)
+        print(cur_angle)
         
 
 if __name__ == "__main__":
@@ -140,9 +147,11 @@ if __name__ == "__main__":
     start_time = time.time()
     print('Starting...')
 
+    '''
     poll_time = 2.0 #How often to pull (every x seconds)
     t = threading.Timer(poll_time, roomba.odometry)
     t.start()
+    '''
 
     #Test code below
     while time.time() - start_time < 10:
@@ -151,4 +160,3 @@ if __name__ == "__main__":
 
         time.sleep(1)
     
-    t.cancel()
