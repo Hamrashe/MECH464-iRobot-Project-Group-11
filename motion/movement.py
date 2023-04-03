@@ -116,9 +116,9 @@ class roomba(object):
 	
 	
     def get_sensors_test():
-    	sensors = bot.get_sensors()
-    	print(sensors)
-    	print('test\n')
+        sensors = bot.get_sensors()
+        print(sensors)
+        print('test\n')
     	
     def square(L, dir):
         #function to drive the robot in a square for UMB calibration
