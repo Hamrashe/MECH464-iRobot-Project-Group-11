@@ -30,13 +30,13 @@ s = grid.points[start.y][start.x]
 e = grid.points[end.y][end.x]
 plt.scatter(s.x,s.y,marker = 'o',color='green')
 plt.scatter(e.x,e.y,marker = 'o',color='red')
-
+'''
 gp = Methods.WaveFront(grid,start,end)
 for row in grid.points:
     for p in row:
         if(p.val!=1):continue
         plt.annotate(f'{p.val}',(p.x,p.y))
-
+'''
 path = Methods.WaveFront(grid,start,end)
 dv = Methods.ExecutePath(grid,path)
 print(dv)
