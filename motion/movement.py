@@ -186,7 +186,11 @@ class roomba(object):
         y_coord += center_distance*math.cos(math.radians(angle)) #Update y_coord from origin
         #print(math.hypot(x_coord,y_coord))
         angle += dtheta_deg #Update total angle away from origin y-axis in degrees
-        angle = angle%(360)
+        if angle < 0:
+
+            angle = angle%(-360)
+        else:
+            angle = angle%(360)
         print('x_coord ' + str(x_coord))
         X.append(x_coord)
         Y.append(y_coord)
