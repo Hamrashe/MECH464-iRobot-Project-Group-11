@@ -69,7 +69,11 @@ class Rect:
         x1, y1 = self.west_edge, self.north_edge
         x2, y2 = self.east_edge, self.south_edge
         ax.plot([x1,x2,x2,x1,x1],[y1,y1,y2,y2,y1], c=c, lw=lw, **kwargs)
-        
+    
+    def verts(self):
+      x1, y1 = self.west_edge, self.north_edge
+      x2, y2 = self.east_edge, self.south_edge
+      return [x1,x2,x2,x1,x1],[y1,y1,y2,y2,y1]
     def area(self):
         return self.w*self.h
 
@@ -199,16 +203,13 @@ class Grid:
             adjs.append(adj)
         return adjs
     
-    def draw(self,ax):
+    def draw(self,ax,fill = 'k'):
         xl=self.xlength
         yl=self.ylength
         for row in self.points:
             for p in row:
                 r = Rect(p.x,p.y,xl,yl)
-                r.draw(ax)
-                #plt.scatter(p.x,p.y,marker='.',color='green')
-                # if(p.val == 1):
-                #     plt.annotate(f'{p.val}',(p.x,p.y))
+                r.draw(ax,fill)
         
 
 def make_ptsquare(length:float,space:float):
