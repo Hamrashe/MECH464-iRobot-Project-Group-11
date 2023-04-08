@@ -3,20 +3,12 @@ import numpy as np
 from scipy.interpolate import BPoly
 import bezier
 
-sys.path.append( r'C:\Users\hamra\Desktop\Google Drive\MECH 464\Project\MECH464-iRobot-Project-Group-11\motion')
-import import_test2
+
 #import movement
 from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
 from scipy import interpolate
-#mymodule.say_hello()
-x = [1, 1, 5, 5]
-y = [1, 5, 5, 1 ]
-
-
-def func(x, y):
-    return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
 
 cp = np.array( [
     (1,1), (1,5), (5,5), (5,1), (1,1)
@@ -56,5 +48,6 @@ curve = BPoly(lp[:,np.newaxis,:], [1,5])
 x = np.linspace(1,5, 20000)
 
 p = curve(x)
+print(f'p is {p.T}')
 plt.plot(*p.T)
 plt.show()

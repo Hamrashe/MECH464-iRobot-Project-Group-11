@@ -12,3 +12,9 @@ Features:
 - Measure the distance of a person
 - Output focal length of camera based on reference image
 - Identify when the camera is pointed directly at a person, by identifying the minimum distance of the person from the camera as the camera rotates
+
+
+Notation:
+    All angles in radians
+    CW is pos, CCW is negative
+    Base units are s, mm, 
