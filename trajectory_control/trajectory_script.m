@@ -13,25 +13,29 @@ assume(s(t) >= 0);
 cond = s(0) == 0;
 %Parametric equations for a circular path, these are the equations I will
 %be getting from Umang!
-%x = 1000*cos(s(t)*2*pi)+1000 ;
-%y = 1000*sin(s(t)*2*pi)+1000; 
+x = 1000*cos(s(t)*2*pi)+1000 ;
+y = 1000*sin(s(t)*2*pi)+1000; 
 
-x = 1*s(t);
-y = 1*s(t);
+%x = 10000*s(t);
+%y = x^2;
 disp(x)
 
 
 %% finding s(t)
 x_dot = diff(x,t);
 y_dot = diff(y,t);
-eqn = x_dot^2 + y_dot^2== 100;
+eqn = sqrt(x_dot^2 + y_dot^2)== 100;
 sol = dsolve(eqn, cond);
-for i = range(1:length(sol)+1)
+for i = 1:length(sol)
+    disp(i)
     disp(length(sol))
     solution = sol(i);
-    T = solve(solution == 1,t);
+    T = double(solve(solution == 1,t));
+    disp(T)
     if T > 0
         s_t = sol(i);
+        break
+        
     end
 
 end
@@ -49,7 +53,7 @@ y2 = subs(y, s(t), s(t) + ds);
 dx = x2 - x1;
 dy = y2 - y1;
         
-theta = atan(dy/dx);
+theta = atan2(dy,dx);
 %disp(theta)
 %% x(t), y(t), theta(t), x_dot(t), y_dot(t), theta_dot(t)
 x_t = subs(x, s(t), s_t);
@@ -60,7 +64,7 @@ q_t = [x_t;y_t;theta_t];
 
 
 x_dot_t = diff(x_t,t);
-y_dot_t = diff(x_t,t);
+y_dot_t = diff(y_t,t);
 theta_dot_t = diff(theta_t,t);
 
 
@@ -69,13 +73,20 @@ q_dot_t = [x_dot_t;y_dot_t;theta_dot_t];
 %% creating time series by evaluating time functions
 t = double(linspace(0,T,1000));
 q_t_vals = double(subs(q_t));
+for i = 1:length(q_t_vals(3,:))
+    if q_t_vals(3,i) < 0
+        q_t_vals(3,i) = q_t_vals(3,i) + 2*pi;
+    end
+end
+
 
 q_dot_t_vals = double(subs(q_dot_t));
+q_dot_t_vals = q_dot_t_vals.*ones(3,length(q_t_vals(3,:)));
 figure
 plot(q_t_vals, t)
 
 q_t_series = timeseries(q_t_vals,transpose(t));
-%q_dot_t_series = timeseries(q_dot_t_vals,transpose(t));
+q_dot_t_series = timeseries(q_dot_t_vals,transpose(t));
 
 
 
