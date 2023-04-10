@@ -41,6 +41,7 @@ def MakePath(gp,s):
   curr = s
   path = [s]
   i=0
+  e = path[-1]
   while(curr != e):
     adjs = gp.adjs(curr.x,curr.y)
     min = adjs[0]
