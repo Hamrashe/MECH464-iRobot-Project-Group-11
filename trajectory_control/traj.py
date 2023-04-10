@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib  import pyplot as plt
 from scipy import integrate as integ
 
-V_d = 100.0 #desired velociy in mm/s 
+V_d = 50.0 #desired velociy in mm/s 
 L = 235.0 #base width in mm
 
 
@@ -16,7 +16,7 @@ init_printing(use_unicode=True)
 #input is x(s) and y(s), the parameter, and desired linear velocity
 #output is x(t), y(t), and theta(t)
 class traj_planning:
-    def __init__(self, v_d, x_func, y_func,p):
+    def __init__(self, x_func, y_func,p):
         self.s = Function('s') #s()
         self.t = symbols('t') #time 
         
@@ -101,12 +101,14 @@ class traj_ctrller:
         self.theta_d_t = theta_d_t
         self.T = T
 
-        self.Kp = 20
-        self.Kd = 1
-        self.Ki = 1
+        self.Kp = 0.5
+        self.Kd = 0
+        self.Ki = 0
 
         self.theta_error = []
         self.error_integ = 0
+
+        self.V_d = V_d
     
     def theta_d_profile(self):
         #Find derivative and integral profile
@@ -115,17 +117,26 @@ class traj_ctrller:
         theta_d_t_integ = integrate(theta_d_t,t)
 
         #Initializing time parameters
-        num_steps = 10000
-        self.time_step = self.T/num_steps
-        self.t_vals = np.linspace(0,self.T, num_steps)
+        self.num_steps = 100
+        self.time_step = self.T/self.num_steps
+        self.t_vals = np.linspace(0,self.T, self.num_steps)
 
         #Creating functions of time
+        
+
         theta_d_func = lambdify(t,theta_d_t, "numpy")
         theta_d_der_func = lambdify(t,theta_d_t_der, "numpy")
         theta_d_integ_func = lambdify(t,theta_d_t_integ, "numpy")
 
         #Calculating profiles for theta_d(t), theta_d'(t), and the integral of theta_d(t)
         self.theta_d_t_vals = theta_d_func(self.t_vals)
+        try:
+            print(len(self.theta_d_t_vals))
+
+        except Exception:
+            self.theta_d_t_vals = np.full(self.num_steps, theta_d_t ,dtype=float)
+            
+            #print(self.theta_d_t_vals)
         self.theta_d_t_der_vals = theta_d_der_func(self.t_vals)
         self.theta_d_t_integ_vals = theta_d_integ_func(self.t_vals)
 
@@ -139,10 +150,11 @@ class traj_ctrller:
         return self.theta_d_t_vals
 
     def controller(self, index, theta_a):
-        error = self.theta_d_t_vals[index] - theta_a
+        theta_d_t_vals = self.theta_d_profile()
+        error = theta_d_t_vals[index] - theta_a
         error = atan2(sin(error), cos(error))
         self.theta_error.append(error)
-
+        print(error)
 
         if index != 0:
             
@@ -154,6 +166,7 @@ class traj_ctrller:
         else:
             error_integ = 0
             error_der = 0
+
         
 
 
@@ -162,7 +175,7 @@ class traj_ctrller:
     
         v_r = V_d + L/2*w
         v_l = V_d - L/2*w
-        return v_r, v_l
+        return float(v_r), float(v_l)
 
     
         
@@ -182,7 +195,7 @@ y_s = 1000*sin(r*2*pi)+1000
 
 
 
-
+'''
 plan = traj_planning(1, x_s,y_s,r)
 
 traj_plan = plan.pathing()
@@ -198,6 +211,7 @@ for i in range(100):
 
     print(traj_ctrl.controller(i,0))
 
+'''
 '''
 trajectory = traj_planning(1, x_s,y_s,r)
 traj_plan = trajectory.pathing()

@@ -9,9 +9,10 @@ from pycreate2 import Create2
 from matplotlib import pyplot as plt
 
 import sys
-sys.path.append(r'/home/pi/Python/Group 11/navigation')
-import navtesting
-import Structs
+#sys.path.append(r'/home/pi/Python/Group 11/navigation')
+#import navtesting
+#import Structs
+# Create a Create2 Bot
 
 
 #Constatnts
@@ -42,16 +43,24 @@ R = []
 X = []
 Y = []
 
-l_encd_init = 0
-r_encd_init = 0
+#l_encd_init = 0
+#r_encd_init = 0
 
 last_left = 0
 last_right = 0
 
 
-dv = navtesting.main()
+#dv = navtesting.main()
 
-class roomba(object):
+class movem(object):
+    def __init__(self, bot):
+        self.bot = bot
+        self.theta = 0
+        self.x = 0
+        self.y = 0
+        self.left_encod_init = bot.get_sensors().encoder_counts_left
+        self.right_encod_init = bot.get_sensors().encoder_counts_right
+        print(f'{self.left_encod_init}, {self.right_encod_init}')
 
     #Max speed of both wheels are 500 mm/s
     def rotate(angle_, ang_speed):
@@ -76,9 +85,9 @@ class roomba(object):
 
         #(Left velocity, right velocity)
         #while cur_ang < angle:
-        roomba.drive(-lin_vel, lin_vel)
+        movem.drive(-lin_vel, lin_vel)
         time.sleep(stopTimeAng)
-        bot.drive_stop()
+        self.bot.drive_stop()
         #cur_ang = cur_ang + sensors.angle
 
     def forward(dist, speed):
@@ -89,9 +98,9 @@ class roomba(object):
         stopTime = dist/speed
 
         #while iRobot traversal distance is less than desired distance, drive at *speed* to desired distance
-        roomba.drive(speed,speed)
+        movem.drive(speed,speed)
         time.sleep(stopTime)
-        bot.drive_stop()
+        self.bot.drive_stop()
         print('drive has stopped\n')
         #print(f'distance travelled {sensors.distance}')
 
@@ -102,9 +111,9 @@ class roomba(object):
         stopTime = dist/speed
 
         #while iRobot traversal distance is less than desired distance, drive at *speed* to desired distance
-        roomba.drive(-speed,-speed)
+        movem.drive(-speed,-speed)
         time.sleep(stopTime)
-        bot.drive_stop()
+        self.bot.drive_stop()
         print('drive has stopped\n')
         #print(f'distance travelled {sensors.distance}')
        
@@ -112,34 +121,34 @@ class roomba(object):
         #this function is for applying corrections before calling drive_direct
         v_L = v_L_nom*WHEEL_DIA_CORRECTION*L_WHEEL_DIA_CORRECTION #nominal speed * distance factor * difference in diameter scaling
         v_R = v_R_nom*WHEEL_DIA_CORRECTION*R_WHEEL_DIA_CORRECTION #nominal speed * distance factor * difference in diameter scaling
-        bot.drive_direct(int(v_L), int(v_R))
+        self.bot.drive_direct(int(v_L), int(v_R))
 	
 	
     def get_sensors_test():
-        sensors = bot.get_sensors()
+        sensors = self.bot.get_sensors()
         print(sensors)
         print('test\n')
     	
     def square(L, dir):
         #function to drive the robot in a square for UMB calibration
-        roomba.forward(L,100)
-        roomba.rotate(dir*90, dir*0.85)
-        roomba.forward(L,100)
-        roomba.rotate(dir*90, dir*0.85)
-        roomba.forward(L,100)
-        roomba.rotate(dir*90, dir*0.85)
-        roomba.forward(L,100)
-        roomba.rotate(dir*90, dir*0.85)
+        movem.forward(L,100)
+        movem.rotate(dir*90, dir*0.85)
+        movem.forward(L,100)
+        movem.rotate(dir*90, dir*0.85)
+        movem.forward(L,100)
+        movem.rotate(dir*90, dir*0.85)
+        movem.forward(L,100)
+        movem.rotate(dir*90, dir*0.85)
 
     def sound():
         song = [72, 16] #(note, duration), ...
         song_num = 0
-        bot.createSong(song_num, song) 
+        self.bot.createSong(song_num, song) 
         time.sleep(1)
-        bot.playSong(song_num)
+        self.bot.playSong(song_num)
     
-    def odometry():
-        #update global variables of x, y, angle of robot
+    def odometry(self):
+        #update global variables of x, y, angle of roself.bot
         global x_coord
         global y_coord
         global angle
@@ -151,16 +160,18 @@ class roomba(object):
         
         global L
         global R
-        print('Interrupted')
+        #print('Interrupted')
         wheel_base = 235.0
         dtheta = 0
         
         
         
-        sensors = bot.get_sensors()
+        sensors = self.bot.get_sensors()
+        
+        #print(f'left encoder counts: {sensors.encoder_counts_left} \nright encoder counts: {sensors.encoder_counts_right} \n\n\n\n\n ')
 
-        left_encoder = sensors.encoder_counts_left - l_encd_init
-        right_encoder = sensors.encoder_counts_right - r_encd_init
+        left_encoder = sensors.encoder_counts_left - self.left_encod_init
+        right_encoder = sensors.encoder_counts_right - self.right_encod_init
         
         
         #print(left_encoder)
@@ -177,27 +188,41 @@ class roomba(object):
         #right_distance = right_encoder * 500.0/ 980.0 #Converts encoder counts into distance in mm
 
         center_distance = (left_distance+right_distance)/2 #Get new center distance
-        print('centerdistance' + str(center_distance))
+        #print('centerdistance' + str(center_distance))
         #ang_rad = angle * math.pi / 180.0
-        dtheta = (((left_distance) - (right_distance))/(wheel_base)) #Get change in angle
+        dtheta = -1*(((left_distance) - (right_distance))/(wheel_base)) #Get change in angle
         dtheta_deg = dtheta*180/math.pi
         
         x_coord += center_distance*math.sin(math.radians(angle)) #Update x_coord from origin
         y_coord += center_distance*math.cos(math.radians(angle)) #Update y_coord from origin
         #print(math.hypot(x_coord,y_coord))
         angle += dtheta_deg #Update total angle away from origin y-axis in degrees
-        if angle < 0:
+        angle = (angle)%360
+        #if angle < 0:
 
-            angle = angle%(-360)
-        else:
-            angle = angle%(360)
-        print('x_coord ' + str(x_coord))
+           # angle = angle%(-360)
+        #else:
+            #angle = angle%(360)
+        #print('x_coord ' + str(x_coord))
         X.append(x_coord)
         Y.append(y_coord)
-        print('y_coord ' + str(y_coord))
-        print('angle is: '+ str(angle))
+        #print('y_coord ' + str(y_coord))
+        #print('angle is: '+ str(angle))
         last_left = left_distance
         last_right = right_distance
+
+        #pass odom data to self
+        self.x = x_coord
+        self.y = y_coord
+        self.theta = angle
+    def visualize(self):
+        plt.plot(X,Y)
+        plt.xlabel('X position')
+        plt.ylabel('Y position')
+        plt.xlim(-1000, 1000)
+        plt.ylim(-1000, 1000)
+        plt.show()
+    
         
 class RepeatTimer(Timer):  
     def run(self):  
@@ -205,10 +230,10 @@ class RepeatTimer(Timer):
             #pycreate2.Create2.get_sensor
             #bot = pycreate2.Create2(port=port, baud=baud['default'])
             self.function(*self.args,**self.kwargs)  
-            print(' ')  
+            #print(' ')  
 
 
-
+'''
 if __name__ == "__main__":
     # Create a Create2 Bot
     #port = '/dev/tty.usbserial-DA01NX3Z'  # this is the serial port on my iMac
@@ -233,17 +258,17 @@ if __name__ == "__main__":
    
     r_encd_init = sensors.encoder_counts_right
 
-    #Roomba updates sensor values every 15 ms, cannot send commands more frequently than that
+    #movem updates sensor values every 15 ms, cannot send commands more frequently than that
 
     start_time = time.time()
     print('Starting...')
 
     
-    #t = RepeatTimer(1, roomba.odometry, bot)
-    odom = RepeatTimer(0.001, roomba.odometry)
+    #t = RepeatTimer(1, movem.odometry, bot)
+    odom = RepeatTimer(0.001, movem.odometry)
     odom.start()
     
-    sounding = RepeatTimer(2, roomba.sound)
+    sounding = RepeatTimer(2, movem.sound)
     #sounding.start()
     
     
@@ -253,10 +278,10 @@ if __name__ == "__main__":
     #################################################Test code below
     #sensors =
     #time.sleep(10)
-    #roomba.rotate(-90, -0.85)
-    #roomba.square(300, -1)
-    #roomba.forward(500, 100)
-    #roomba.backward(500,100)
+    #movem.rotate(-90, -0.85)
+    #movem.square(300, -1)
+    #movem.forward(500, 100)
+    #movem.backward(500,100)
     
     
     for vec in dv:
@@ -268,8 +293,8 @@ if __name__ == "__main__":
         angle - ang*180/math.pi
         #print(angle)
         #print(rot)
-        roomba.rotate(angle - ang*180/math.pi, 0.85*np.sign(angle - ang*180/math.pi))
-        roomba.forward(dist, 100)
+        movem.rotate(angle - ang*180/math.pi, 0.85*np.sign(angle - ang*180/math.pi))
+        movem.forward(dist, 100)
         #time.sleep(10)
     
     #time.sleep(1)
@@ -288,3 +313,4 @@ if __name__ == "__main__":
     plt.ylim(-1000, 1000)
     plt.show()
     
+'''

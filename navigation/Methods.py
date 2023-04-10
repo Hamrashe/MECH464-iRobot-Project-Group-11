@@ -21,7 +21,7 @@ def WaveFront(grid: Structs.Grid,
     gp = copy.deepcopy(grid)
     #don't change the actual points
 
-    #gp.points[e.y][e.x].val = 2
+    gp.points[e.y][e.x].val = 2
     d = 3
     neighbors = gp.adjs(e.x,e.y)
     while(neighbors):
@@ -35,13 +35,13 @@ def WaveFront(grid: Structs.Grid,
         d+=1
 
     # should now have a greedy path
-    return MakePath(gp,s), gp
+    return MakePath(gp,s,e), gp
 
-def MakePath(gp,s):
+def MakePath(gp,s,e):
   curr = s
   path = [s]
   i=0
-  e = path[-1]
+  
   while(curr != e):
     adjs = gp.adjs(curr.x,curr.y)
     min = adjs[0]
@@ -57,10 +57,11 @@ def MakePath(gp,s):
     curr = Structs.XY(min[0],min[1])
     i+=1
     path.append(curr)
-  e = path[-1]
+  #e = path[-1]
   while(gp.points[e.y][e.x].val==1):
       del path[-1]
       e=path[-1]
+  return path
    
 def ExecutePath(grid:Structs.Grid,path):
   #path should containing starting point at position 0, end point at position -1
