@@ -8,11 +8,12 @@ from traj import traj_planning, traj_ctrller
 from sympy import *
 import numpy as np
 import matplotlib.pyplot as plt
+from points2bezier import main
 #sys.path.append(r'/home/pi/Python/Group 11/navigation')
-sys.path.append(r"C:\Users\hamra\Desktop\Google Drive\MECH 464\Project\MECH464-iRobot-Project-Group-11\motion")
+sys.path.append(r"motion")
 from movement import movem, RepeatTimer
 
-sys.path.append(r"C:\Users\hamra\Desktop\Google Drive\MECH 464\Project\MECH464-iRobot-Project-Group-11\navigation")
+sys.path.append(r"navigation")
 import Structs
 from Structs import XY
 import Methods
@@ -27,7 +28,7 @@ def bez_gen():
     points.extend(Structs.make_circ(XY(3,6),0.7))
     points.extend(Structs.make_circ(XY(3,4),0.3))
     points.extend(Structs.make_circ(XY(6,3),0.6))
-    grid = Structs.Grid(points,30,30,robot_radius)
+    grid = Structs.Grid(points,10,10,robot_radius)
 
     ax = plt.axes()
     grid.draw(ax)
@@ -35,12 +36,14 @@ def bez_gen():
         plt.scatter(p.x,p.y,marker = '.',color='black')
 
     start = XY(5,3)
-    end = XY(11,25)
+    end = XY(6,6)
 
     s = grid.points[start.y][start.x]
     e = grid.points[end.y][end.x]
 
     path,gp = Methods.WaveFront(grid,start,end)
+
+    print(path)
 
     bez = Methods.MakeBezier(path)
     
@@ -88,41 +91,45 @@ if __name__ == "__main__":
     y_t = path[1]
     p = path[2]
 
-    t = symbols('t')
+    t, s= symbols('t s')
     
-    x_t = 100*cos(t*2*pi)+100
-    y_t = 100*sin(t*2*pi)+100
+    #x_t = 100*cos(t*2*pi)+100
+    #y_t = 100*sin(t*2*pi)+100
+    p = s
+    x_t, y_t = main()
     
-    #x_t = 100*t
-    #y_t = 1*t
+    #x_t = 100*s
+    #y_t = 1*s
 
     
 
     #Initialize Trajecotry Plan
     plan = traj_planning(x_t, y_t, p)
-    print(plan.pathing())
+    #print(plan.pathing())
 
     ctrl = traj_ctrller(plan.theta_t, plan.T)
-    print(ctrl.controller(0,move.theta))
+    #print(ctrl.controller(0,move.theta))
 
     step_size = plan.T/ctrl.num_steps
     V_d = ctrl.V_d
 
     plt.plot(ctrl.theta_d_t_vals)
     plt.show()
-
-    move.odometry()
-    #t_start = time.time()
+    plan.vis_path(x_t,y_t,p)
     
-    for i in  range(ctrl.num_steps) :
-        #t_curr = time.time() - t_start
+    move.odometry()
+    t_start = time.time()
+    print(step_size)
+    while time.time()- t_start < plan.T :
+        t_s = time.time()
+        t_curr = time.time() - t_start
         
-        #index = np.absolute((ctrl.t_vals-t_curr)).argmin()
-        print(f'index is {i}')
+        index = np.absolute((ctrl.t_vals-t_curr)).argmin()
+        print(f'index is {index}')
         #print(ctrl.controller(index,np.radians(move.theta)))
         #print(f'theta is : {np.radians(move.theta)}')
         move.odometry()
-        v_r, v_l = ctrl.controller(i,np.radians(move.theta))
+        v_r, v_l = ctrl.controller(index,np.radians(move.theta))
         #print(f'error is: {ctrl.theta_error}\n\n')
         print(f'vr is {v_r}, vl is {v_l}')
         if abs(v_r) > 300 or abs(v_l) > 300:
@@ -130,9 +137,11 @@ if __name__ == "__main__":
         
         
         bot.drive_direct(int(V_d/2.0 + v_r), int(V_d/2.0 +v_l))
-        time.sleep(step_size)
+        #time.sleep(step_size -(time.time() - t_s))
     bot.drive_stop()
+    
     move.visualize()
+
 
 
 
