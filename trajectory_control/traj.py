@@ -32,7 +32,8 @@ init_printing(use_unicode=True)
 class traj_planning:
     def __init__(self, x_list, y_list,p):
         self.s = Function('s') #s()
-        self.t = symbols('t') #time 
+        self.t = symbols('t') #time
+        self._s = symbols('_s') 
         
         self.x_s = []
         self.y_s = []
@@ -50,6 +51,7 @@ class traj_planning:
     def find_s_t(self):
         print('solving for s(t)')
         s = self.s
+        _s = self._s
         t = self.t
         x_s = self.x_s
         y_s = self.y_s
