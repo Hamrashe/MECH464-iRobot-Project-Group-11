@@ -9,13 +9,14 @@ from sympy import *
 import numpy as np
 import matplotlib.pyplot as plt
 #sys.path.append(r'/home/pi/Python/Group 11/navigation')
-sys.path.append(r"C:\Users\hamra\Desktop\Google Drive\MECH 464\Project\MECH464-iRobot-Project-Group-11\motion")
+sys.path.append(r"motion")
 from movement import movem, RepeatTimer
 
-sys.path.append(r"C:\Users\hamra\Desktop\Google Drive\MECH 464\Project\MECH464-iRobot-Project-Group-11\navigation")
+sys.path.append(r"navigation")
 import Structs
 from Structs import XY
 import Methods
+
 
 
 def bez_gen():
@@ -95,11 +96,14 @@ if __name__ == "__main__":
     
     #x_t = 100*t
     #y_t = 1*t
-
+    path = bez_gen()
+   
+    #Initialize Trajecotry Plan
+    plan = traj_planning(path[0], path[1], path[2])
     
 
-    #Initialize Trajecotry Plan
-    plan = traj_planning(x_t, y_t, p)
+    
+    
     print(plan.pathing())
 
     ctrl = traj_ctrller(plan.theta_t, plan.T)
