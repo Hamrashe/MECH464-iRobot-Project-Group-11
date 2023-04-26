@@ -6,6 +6,7 @@ import numpy as np
 from matplotlib  import pyplot as plt
 from scipy import integrate as integ
 import time as ti
+from tqdm import tqdm
 
 import sys
 
@@ -14,8 +15,8 @@ import Structs
 from Structs import XY
 import Methods
 
-V_d = 100.0/1000 #desired velociy in m/s 
-L = 235.0/1000 #base width in m
+V_d = 50.0 #desired velociy in cm/s 
+L = 235.0 #base width in cm
 
 
 init_printing(use_unicode=True)
@@ -42,8 +43,8 @@ class traj_planning:
         x_pts = x(s)
         y_pts = y(s)
         #print(x_pts, y_pts)
-        plt.scatter(x_pts, y_pts )
-        plt.show()
+        #plt.scatter(x_pts, y_pts )
+        #plt.show()
     
         #initialize the time array
         time = [0]
@@ -59,11 +60,11 @@ class traj_planning:
         time = np.array(time, dtype=float)
         s = np.array(s, dtype=float)
         #print(f'time points: {time}')
-        plt.plot(time,s)
-        plt.show()
+        #plt.plot(time,s)
+        #plt.show()
         coeff = np.polyfit(time,s, 5)
         s_t = coeff[0]*time_var**5 + coeff[1]*time_var**4 + coeff[2]*time_var**3 + coeff[3]*time_var**2 + coeff[4]*time_var**1 + coeff[0]*time_var**0
-        print(s_t)
+        print(f's_t is: {s_t}')
         plot_parametric(time_var,s_t, (time_var, 0, time[-1]))
         return s_t, time[-1]
     '''
@@ -118,7 +119,7 @@ class traj_planning:
         t = self.t
         s_step = 0.001
         s_t, self.T = self.find_s_t(x=self.x_s, y=self.y_s, t=s, time_var = t, step=s_step)
-
+        #print('s_t is found!')
         
         self.theta_s = self.find_theta_s()
         
@@ -138,7 +139,7 @@ class traj_planning:
 
         v_r, v_l = self.wheel_speed_profiles(theta_dot_t,x_dot_t, y_dot_t, t)
 
-        return [v_r,v_l,self.theta_t, self.T]
+        return [v_r,v_l,self.theta_t, self.T, self.x_t, self.y_t]
         
     def wheel_speed_profiles(self,theta_dot_t, x_dot_t, y_dot_t, time_var):
         #print(theta_t.diff())
@@ -146,15 +147,18 @@ class traj_planning:
         #x_dot_t = diff(x_t(time_var), time_var)
         #y_dot_t = diff(y_t(time_var), time_var)
 
-        V = sqrt(x_dot_t**2 + y_dot_t**2)
+        V = (x_dot_t**2 + y_dot_t**2)**0.5
+        print('V has been found')
         w = theta_dot_t
         v_r = V + L/2*w
         v_l = V - L/2*w
         v_r = lambdify(time_var, v_r)
         v_l = lambdify(time_var, v_l)
         time = np.linspace(0,self.T, 1000)
+        print(f'left wheel speed max = {max(v_l(time))}\n right wheel speed max = {max(v_r(time))}\n')
         plt.plot(time, v_r(time))
         plt.plot(time, v_l(time))
+        plt.ylim((0,200))
         plt.show() #plot showing wheel speeds for each wheel vs time
         return v_r,v_l
     def vis_path(self, x_s, y_s, s):
@@ -175,7 +179,7 @@ class traj_ctrller:
         self.v_r_d = v_r_d
         self.v_l_d = v_l_d
         self.theta_d_t = theta_d_t
-        self.Kp = 0.5
+        self.Kp = 1
         self.Kd = 0
         self.Ki = 0
 
@@ -229,7 +233,7 @@ class traj_ctrller:
         error = self.theta_d_t(time) - theta_a
         error = atan2(sin(error), cos(error))
         self.theta_error.append(error)
-        print(error)
+        print(f'theta error: {error}')
 
         if len(self.theta_error) >1:
             
@@ -247,7 +251,7 @@ class traj_ctrller:
 
 
         w = self.Kp*error + self.Kd*error_der + self.Ki*self.error_integ
-    
+        #w = 0
         v_r = self.v_r_d(time) + L/2*w
         v_l = self.v_l_d(time) - L/2*w
         return float(v_r), float(v_l)
@@ -255,37 +259,66 @@ class traj_ctrller:
     
 def bez_gen():
     #Generates the bezier curve for a path through a map of obstacles. That map is defined in this funciton.
-    #This function replaces the navtesting funcitonality
-    robot_radius = 0.8
+    #This function is the behind the scenes of the pathing generation. For a fully realized project, this obstacle maping would come from a camera scanning an environment
 
-    points = Structs.make_ptsquare(100,1)
-    #points.extend(Structs.make_circ(XY(3,6),3))
-    #points.extend(Structs.make_circ(XY(30,40),10))
-    points.extend(Structs.make_circ(XY(60,30),20))
-    grid = Structs.Grid(points,100,100,robot_radius)
+    
 
+    room_size = 3600 #mm
+    room_pts = 50
+    cell_size = room_size/room_pts
+
+    print(f'cell size: {cell_size}')
+
+
+    robot_radius = 38/cell_size
+
+
+    points = Structs.make_ptsquare(room_pts,1) 
+    #points.extend(Structs.make_circ(XY(0.4,0.4),0.1)) #right side wall, 325mm to the right of the origin
+    points.extend(Structs.Rect(100/cell_size, 100/cell_size, 400/cell_size, 100/cell_size))
+    points.extend(Structs.make_circ(XY(200/cell_size,400/cell_size),100/cell_size))
+    #points.extend(Structs.make_circ(XY(25,25),5))
+    grid = Structs.Grid(points,room_pts,room_pts,robot_radius, 1)
+    print('grid has been constructed')
+
+    
     ax = plt.axes()
     grid.draw(ax)
-    for p in points:
+    for p in tqdm(points):
         plt.scatter(p.x,p.y,marker = '.',color='black')
     plt.show()
-
-    start = XY(2,3)
-    end = XY(90,90)
+    
+    
+    start = XY(1,1)
+    end = XY(int(500/cell_size),int(700/cell_size))
+    print(start, end)
 
     s = grid.points[start.y][start.x]
     e = grid.points[end.y][end.x]
     
     path,gp = Methods.WaveFront(grid,start,end)
-    print(path)
+
+
+    
+    ax = plt.axes()
+    grid.draw(ax)
     for p in points:
         plt.scatter(p.x,p.y,marker = '.',color='black')
     for p in path:
         plt.scatter(p.x,p.y,marker = '.',color='red')
 
     plt.show()
-
-
+    '''
+    ax = plt.axes()
+    grid.draw(ax)
+    for p in points:
+        plt.scatter(p.x,p.y,marker = '.',color='black')
+    for p in path:
+        plt.scatter(p.x,p.y,marker = '.',color='red')
+    '''
+    path = np.array(path)*cell_size
+    print(path)
+    
     bez = Methods.MakeBezier(path)
 
     t= symbols('t')
@@ -297,7 +330,7 @@ def bez_gen():
     y_t = bez[1]
     theta_t = atan(y_t/x_t)
     #print(f'x(t): {bez[0]} \n\n\n\n y(t): {bez[1]}')
-    return x_t, y_t, t, theta_t
+    return x_t, y_t, t, theta_t, path[0]
         
 
 
@@ -309,32 +342,23 @@ def bez_gen():
     
 
     
-
+'''
 
 
 #########Testing Code#################
-t, r = symbols('t r')
-s = Function('s')
-x_s = Function('x')
-x_s = 10*cos(r*2*pi)+1000
-y_s = 10*sin(r*2*pi)+1000
-
-
-path = bez_gen()
-
-s_step = 0.001
-#find_s_t(path[0], path[1], path[2], s_step) #THIS WORKS
 
 
 
 
-plan = traj_planning(path[0], path[1], path[2])
+x_s, y_s, p, theta = bez_gen()
+
+plan = traj_planning(x_s, y_s, p)
 #plan = traj_planning(x_s, y_s, r)
 
-traj_plan = plan.pathing()
+v_r_d, v_l_d, theta_d, endtime, x_time, y_time  = plan.pathing()
 
 
-traj_ctrl = traj_ctrller(traj_plan[0],traj_plan[1],traj_plan[2], traj_plan[3])
+traj_ctrl = traj_ctrller(v_r_d, v_l_d, theta_d, endtime)
 
 #print(traj_ctrl.theta_d_profile())
 #plt.plot(traj_ctrl.t_vals,traj_ctrl.theta_d_t_vals)
@@ -356,15 +380,16 @@ while time < plan.T:
     ti.sleep(t_step)
     time = ti.time()- ctrl_begin
 
+#visualize results of the run
+bez_gen()
+time_vals = np.linspace(0,endtime, 1000)
+plt.plot(x_time(time_vals),y_time(time_vals))
+
+plt.show()
+#TODO Add move visualize to code 
+#move.visualize()
+
 
 '''
 
 
-trajectory = traj_planning(1, x_s,y_s,r)
-traj_plan = trajectory.pathing()
-print(f'path is {traj_plan[3]}')
-#print(f'theta_s is {trajectory.theta_s}')
-#print(trajectory.theta_s())
-trajectory.vis_path(x_s, y_s, r)
-print(trajectory.s_t)
-'''

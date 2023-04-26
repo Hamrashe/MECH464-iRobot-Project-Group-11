@@ -9,6 +9,14 @@ from pycreate2 import Create2
 from matplotlib import pyplot as plt
 
 import sys
+
+sys.path.append(r"navigation")
+import Structs
+from Structs import XY
+import Methods
+
+
+import sys
 #sys.path.append(r'/home/pi/Python/Group 11/navigation')
 #import navtesting
 #import Structs
@@ -193,8 +201,8 @@ class movem(object):
         dtheta = -1*(((left_distance) - (right_distance))/(wheel_base)) #Get change in angle
         dtheta_deg = dtheta*180/math.pi
         
-        x_coord += center_distance*math.sin(math.radians(angle)) #Update x_coord from origin
-        y_coord += center_distance*math.cos(math.radians(angle)) #Update y_coord from origin
+        x_coord += center_distance*math.sin(math.radians(-1*angle)) #Update x_coord from origin
+        y_coord += center_distance*math.cos(math.radians(-1*angle)) #Update y_coord from origin
         #print(math.hypot(x_coord,y_coord))
         angle += dtheta_deg #Update total angle away from origin y-axis in degrees
         angle = (angle)%360
@@ -203,11 +211,11 @@ class movem(object):
            # angle = angle%(-360)
         #else:
             #angle = angle%(360)
-        #print('x_coord ' + str(x_coord))
+        print('x_coord ' + str(x_coord))
         X.append(x_coord)
         Y.append(y_coord)
-        #print('y_coord ' + str(y_coord))
-        #print('angle is: '+ str(angle))
+        print('y_coord ' + str(y_coord))
+        print('angle is: '+ str(angle))
         last_left = left_distance
         last_right = right_distance
 
@@ -215,13 +223,17 @@ class movem(object):
         self.x = x_coord
         self.y = y_coord
         self.theta = angle
-    def visualize(self):
-        plt.plot(X,Y)
+    def visualize(self, start):
+        print(np.array(X) + start.x,np.array(Y)+start.y)
+        plt.plot(np.array(X)+ start.x,np.array(Y)+start.y)
         plt.xlabel('X position')
         plt.ylabel('Y position')
-        plt.xlim(-1000, 1000)
-        plt.ylim(-1000, 1000)
+        #plt.xlim(-1000, 1000)
+        #plt.ylim(-1000, 1000)
+        plt.title("desired trajectory and actual trajectory")
+        plt.legend("desired path", "actual path")
         plt.show()
+    
     
         
 class RepeatTimer(Timer):  

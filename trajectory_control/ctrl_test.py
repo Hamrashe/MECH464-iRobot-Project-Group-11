@@ -1,10 +1,10 @@
 #ctrl_test.py
 #file to test controller in
-import time
+import time as ti
 from threading import Timer
 import pycreate2 
 import sys
-from traj import traj_planning, traj_ctrller
+from traj import traj_planning, traj_ctrller, bez_gen
 from sympy import *
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ from Structs import XY
 import Methods
 
 
-
+'''
 def bez_gen():
     #Generates the bezier curve for a path through a map of obstacles. That map is defined in this funciton.
     #This function replaces the navtesting funcitonality
@@ -55,14 +55,14 @@ def bez_gen():
     
     #print(f'x(t): {bez[0]} \n\n\n\n y(t): {bez[1]}')
     return x_t, y_t, t
-
+'''
 
 
 ######################################################working code#############################################
 ##start the robot and main function begins
 if __name__ == "__main__":
     # Create a Create2 Bot
-    port = 'COM7'  # this is the serial port on my iMac
+    port = 'COM8'  # this is the serial port on my iMac
     #port = '/dev/ttyUSB0'  # this is the serial port on my raspberry pi
     baud = {
         'default': 115200,
@@ -83,27 +83,63 @@ if __name__ == "__main__":
     #intialize timer
     
     odom = RepeatTimer(0.125, move.odometry)
-    #odom.start()
-    path = bez_gen()
-    x_t = path[0]
-    y_t = path[1]
-    p = path[2]
+    
+    x_s, y_s, p, theta, start= bez_gen()
 
-    t = symbols('t')
-    
-    x_t = 100*cos(t*2*pi)+100
-    y_t = 100*sin(t*2*pi)+100
-    
-    #x_t = 100*t
-    #y_t = 1*t
-    path = bez_gen()
-   
-    #Initialize Trajecotry Plan
-    plan = traj_planning(path[0], path[1], path[2])
-    
+    plan = traj_planning(x_s, y_s, p)
+    #plan = traj_planning(x_s, y_s, r)
+
+    v_r_d, v_l_d, theta_d, endtime, x_time, y_time  = plan.pathing()
+
+
+    traj_ctrl = traj_ctrller(v_r_d, v_l_d, theta_d, endtime)
+
+    #print(traj_ctrl.theta_d_profile())
+    #plt.plot(traj_ctrl.t_vals,traj_ctrl.theta_d_t_vals)
+    #plt.show()
+
+    time = 0
+    t_step = 0.1
+    t_start = ti.time()
+    ctrl_begin = ti.time()
+    plan.T
+    odom.start()
+    print(f'end time: {endtime} ')
+    while time <  endtime:
+        print(f'time: {time} ')
+        
+        v_r, v_l = traj_ctrl.controller(time, np.radians(move.theta + 90), t_elapsed=ti.time()-t_start)
+        
+        if abs(v_r) > 300 or abs(v_l) > 300:
+            print('speed too high!')
+            #break
+            
+        
+        print(v_r, v_l)
+        if abs(v_r) < 300 and abs(v_l) < 300:
+
+            bot.drive_direct(int(v_r), int(v_l)) #speed in mm/s
+        #TODO replace this line with sending speed signal to irobot 
+        #TODO replace the second argument with the angle measurement from odometry 
+        #TODO note the speed is in m/s, need to convert to mm/s for sending commands to the irobot
+
+        t_start = ti.time()
+        ti.sleep(t_step)
+        time = ti.time()- ctrl_begin
+    print('run done!')
+    bot.drive_stop()
+    odom.cancel()
+    #visualize results of the run
+    bez_gen()
+    time_vals = np.linspace(0,endtime, 1000)
+    plt.plot(x_time(time_vals),y_time(time_vals))
+
+    #plt.show()
+    #TODO Add move visualize to code 
+    move.visualize(start)
 
     
-    
+    '''
     print(plan.pathing())
 
     ctrl = traj_ctrller(plan.theta_t, plan.T)
@@ -137,6 +173,6 @@ if __name__ == "__main__":
         time.sleep(step_size)
     bot.drive_stop()
     move.visualize()
-
+    '''
 
 

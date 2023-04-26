@@ -1,6 +1,7 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 
 class XY:
@@ -146,7 +147,7 @@ class QTNode:
         pass
                          
 class Grid:
-    def __init__(self,points:list[XY],xn:int,yn:int,rad:float,cell_dim=1):
+    def __init__(self,points:list[XY],xn:int,yn:int,rad:float,cell_dim):
         #length is cell length
         self.xrange = [10000000,-10000000]
         self.yrange = [10000000,-10000000]
@@ -165,7 +166,7 @@ class Grid:
         
         xoffset = self.xlength/2
         yoffset = self.ylength/2
-        for i in range(self.xn):
+        for i in tqdm(range(self.xn)):
             for j in range(self.yn):
                 x = self.xrange[0] + xoffset + i*self.xlength
                 y = self.yrange[0] + yoffset + j*self.ylength
@@ -178,14 +179,14 @@ class Grid:
         
         #account for robot radius; DISGUSTINGLY slow, 
         #optimize if time permits
-        for row in self.points:
+        for row in tqdm(self.points):
             for p in row:
                 if(p.val != 1): continue
                 for row2 in self.points:
                     for q in row2:
                         if(p.dist(q)<=rad and q.val!=1):
                             q.val = -1
-        for row in self.points:
+        for row in tqdm(self.points):
             for p in row:
                 if(p.val==-1):p.val = 1
 
@@ -222,6 +223,8 @@ def make_ptsquare(length:float,space:float):
         points.append(XY(0,l))
         points.append(XY(length,l))
         l+=space
+        
+        #print(points)
     return points
 
 def make_circ(center:XY,radius:float):

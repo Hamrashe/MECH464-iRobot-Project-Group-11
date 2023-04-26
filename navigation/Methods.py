@@ -10,13 +10,21 @@ def WaveFront(grid: Structs.Grid,
 
     #guards
     if((not(0<=s.x<=grid.xn)) or (not(0<=s.y<=grid.yn))):
+        print('test1')
         return [False,[0]]
     if((not(0<=e.y<=grid.xn)) or (not(0<=e.y<=grid.yn))):
+        print('test2')
         return [False,[0]]
+    '''
     if(grid.points[s.x][s.y].val == 1):
+        print('test3')
         return [False,[0]]
+    '''
+    
     if(grid.points[s.x][s.y].val == 1):
+        print('test4')
         return [False,[0]]
+    
 
     gp = copy.deepcopy(grid)
     #don't change the actual points
