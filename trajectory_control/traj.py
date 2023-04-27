@@ -19,6 +19,8 @@ V_d = 50.0 #desired velociy in cm/s
 L = 235.0 #base width in cm
 
 
+
+
 init_printing(use_unicode=True)
 
 ####Traj Planner##### 
@@ -65,7 +67,12 @@ class traj_planning:
         coeff = np.polyfit(time,s, 5)
         s_t = coeff[0]*time_var**5 + coeff[1]*time_var**4 + coeff[2]*time_var**3 + coeff[3]*time_var**2 + coeff[4]*time_var**1 + coeff[0]*time_var**0
         print(f's_t is: {s_t}')
-        plot_parametric(time_var,s_t, (time_var, 0, time[-1]))
+        p = plot_parametric(time_var,s_t, (time_var, 0, time[-1]), show=False)
+        p.xlabel = 'time [s]'
+        p.ylabel = 's value'
+        p.title = "s(t) vs time"
+        p.show()
+        
         return s_t, time[-1]
     '''
     #Old method for finding s_t
@@ -159,6 +166,10 @@ class traj_planning:
         plt.plot(time, v_r(time))
         plt.plot(time, v_l(time))
         plt.ylim((0,200))
+        plt.ylabel('wheel speed [mm/s]')
+        plt.xlabel('time [s]')
+        plt.legend('left wheel', 'right wheel')
+        plt.title('desired wheel velocities')
         plt.show() #plot showing wheel speeds for each wheel vs time
         return v_r,v_l
     def vis_path(self, x_s, y_s, s):
@@ -179,7 +190,7 @@ class traj_ctrller:
         self.v_r_d = v_r_d
         self.v_l_d = v_l_d
         self.theta_d_t = theta_d_t
-        self.Kp = 1
+        self.Kp = 5
         self.Kd = 0
         self.Ki = 0
 
@@ -263,34 +274,39 @@ def bez_gen():
 
     
 
-    room_size = 3600 #mm
-    room_pts = 50
+    room_size = 3800 #mm
+    room_pts = 38
     cell_size = room_size/room_pts
 
-    print(f'cell size: {cell_size}')
+    print(f'cell size: {cell_size}mm')
 
 
-    robot_radius = 38/cell_size
+    robot_radius = 400/cell_size
 
-
+    #######Generating Room Map#################################
     points = Structs.make_ptsquare(room_pts,1) 
     #points.extend(Structs.make_circ(XY(0.4,0.4),0.1)) #right side wall, 325mm to the right of the origin
-    points.extend(Structs.Rect(100/cell_size, 100/cell_size, 400/cell_size, 100/cell_size))
-    points.extend(Structs.make_circ(XY(200/cell_size,400/cell_size),100/cell_size))
+    #points.extend(Structs.make_square(100/cell_size, 10/cell_size,XY(10,10)))
+    points.extend(Structs.make_rect(XY(3250/cell_size,0), XY(room_size/cell_size,room_size/cell_size)))#Right wall
+    points.extend(Structs.make_rect(XY(910/cell_size,2080/cell_size), XY((910+910)/cell_size,(2080+1770)/cell_size)))#Table
+    points.extend(Structs.make_rect(XY(1100/cell_size,0), XY(room_size/cell_size, 1130/cell_size)))#Carpet
+    #points.extend(Structs.make_circ(XY(200/cell_size,400/cell_size),100/cell_size))
     #points.extend(Structs.make_circ(XY(25,25),5))
     grid = Structs.Grid(points,room_pts,room_pts,robot_radius, 1)
     print('grid has been constructed')
 
-    
+    '''
     ax = plt.axes()
     grid.draw(ax)
     for p in tqdm(points):
         plt.scatter(p.x,p.y,marker = '.',color='black')
+    plt.title("Obstacle Map")
     plt.show()
+    '''
     
-    
-    start = XY(1,1)
-    end = XY(int(500/cell_size),int(700/cell_size))
+    start = XY(int(robot_radius+100/cell_size),int(robot_radius+100/cell_size))
+    print(start)
+    end = XY(int(2850/cell_size),int((2200+1130)/cell_size))
     print(start, end)
 
     s = grid.points[start.y][start.x]
@@ -299,7 +315,7 @@ def bez_gen():
     path,gp = Methods.WaveFront(grid,start,end)
 
 
-    
+    '''
     ax = plt.axes()
     grid.draw(ax)
     for p in points:
@@ -309,27 +325,37 @@ def bez_gen():
 
     plt.show()
     '''
+    
     ax = plt.axes()
     grid.draw(ax)
     for p in points:
         plt.scatter(p.x,p.y,marker = '.',color='black')
     for p in path:
         plt.scatter(p.x,p.y,marker = '.',color='red')
-    '''
+    
     path = np.array(path)*cell_size
-    print(path)
+    #print(path)
     
     bez = Methods.MakeBezier(path)
 
     t= symbols('t')
 
-    #x_t = lambdify(t,bez[0], "numpy")
-    #y_t = lambdify(t,bez[1], "numpy")
+    x_t = lambdify(t,bez[0], "numpy")
+    y_t = lambdify(t,bez[1], "numpy")
 
     x_t = bez[0]
     y_t = bez[1]
+    x_t_vals = lambdify(t,x_t, "numpy")
+    y_t_vals = lambdify(t,y_t, "numpy")
+    t_vals = np.linspace(0,1,1000)
     theta_t = atan(y_t/x_t)
     #print(f'x(t): {bez[0]} \n\n\n\n y(t): {bez[1]}')
+    plt.plot(x_t_vals(t_vals)/cell_size, y_t_vals(t_vals)/cell_size)
+    #plt.legend((points, path),("Obstacles", "Point Path"))
+    plt.title("Obstacle Map With Desired Path")
+    plt.show()
+    #plot_parametric(x_t, y_t, (t, 0,1))
+
     return x_t, y_t, t, theta_t, path[0]
         
 

@@ -82,7 +82,7 @@ if __name__ == "__main__":
     
     #intialize timer
     
-    odom = RepeatTimer(0.125, move.odometry)
+    odom = RepeatTimer(0.1, move.odometry)
     
     x_s, y_s, p, theta, start= bez_gen()
 
@@ -99,12 +99,13 @@ if __name__ == "__main__":
     #plt.show()
 
     time = 0
-    t_step = 0.1
+    t_step = 0.2
     t_start = ti.time()
     ctrl_begin = ti.time()
     plan.T
     odom.start()
     print(f'end time: {endtime} ')
+    #move.odometry()
     while time <  endtime:
         print(f'time: {time} ')
         
@@ -112,23 +113,26 @@ if __name__ == "__main__":
         
         if abs(v_r) > 300 or abs(v_l) > 300:
             print('speed too high!')
-            #break
+            break
             
         
         print(v_r, v_l)
         if abs(v_r) < 300 and abs(v_l) < 300:
-
+            print('running')
             bot.drive_direct(int(v_r), int(v_l)) #speed in mm/s
         #TODO replace this line with sending speed signal to irobot 
         #TODO replace the second argument with the angle measurement from odometry 
         #TODO note the speed is in m/s, need to convert to mm/s for sending commands to the irobot
-
+        
         t_start = ti.time()
         ti.sleep(t_step)
         time = ti.time()- ctrl_begin
+        #move.odometry()
+        ti.sleep(t_step)
+    odom.cancel()
     print('run done!')
     bot.drive_stop()
-    odom.cancel()
+    
     #visualize results of the run
     bez_gen()
     time_vals = np.linspace(0,endtime, 1000)

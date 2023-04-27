@@ -198,14 +198,19 @@ class movem(object):
         center_distance = (left_distance+right_distance)/2 #Get new center distance
         #print('centerdistance' + str(center_distance))
         #ang_rad = angle * math.pi / 180.0
-        dtheta = -1*(((left_distance) - (right_distance))/(wheel_base)) #Get change in angle
-        dtheta_deg = dtheta*180/math.pi
         
-        x_coord += center_distance*math.sin(math.radians(-1*angle)) #Update x_coord from origin
-        y_coord += center_distance*math.cos(math.radians(-1*angle)) #Update y_coord from origin
-        #print(math.hypot(x_coord,y_coord))
-        angle += dtheta_deg #Update total angle away from origin y-axis in degrees
-        angle = (angle)%360
+        
+        dtheta = -1*(((left_distance) - (right_distance))/(wheel_base)) #Get change in angle
+        if abs(dtheta) < 1:
+            dtheta_deg = dtheta*180/math.pi
+            
+            x_coord += center_distance*math.sin(math.radians(-1*angle)) #Update x_coord from origin
+            y_coord += center_distance*math.cos(math.radians(-1*angle)) #Update y_coord from origin
+            #print(math.hypot(x_coord,y_coord))
+            angle += dtheta_deg #Update total angle away from origin y-axis in degrees
+            angle = (angle)%360
+        else:
+            print('theta error!\n\n\n\n')
         #if angle < 0:
 
            # angle = angle%(-360)

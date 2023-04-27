@@ -10,10 +10,10 @@ def WaveFront(grid: Structs.Grid,
 
     #guards
     if((not(0<=s.x<=grid.xn)) or (not(0<=s.y<=grid.yn))):
-        print('test1')
+        print('MAPPING ERROR: start point is outside the grid')
         return [False,[0]]
     if((not(0<=e.y<=grid.xn)) or (not(0<=e.y<=grid.yn))):
-        print('test2')
+        print('MAPPING ERROR: end point is outside the grid')
         return [False,[0]]
     '''
     if(grid.points[s.x][s.y].val == 1):
@@ -22,7 +22,7 @@ def WaveFront(grid: Structs.Grid,
     '''
     
     if(grid.points[s.x][s.y].val == 1):
-        print('test4')
+        print('MAPPING ERROR: Start point is on an obstacle point')
         return [False,[0]]
     
 

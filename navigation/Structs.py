@@ -227,6 +227,52 @@ def make_ptsquare(length:float,space:float):
         #print(points)
     return points
 
+def make_square(length:float,space:float, start):
+    points = []
+    points.append(start)
+    l=space
+    while(l<=length):
+        points.append(XY(start.x +l,start.y)) #bottom
+        points.append(XY(start.x + l,length+start.y)) #right
+        points.append(XY(start.x,l+start.y)) #left
+        points.append(XY(length+start.x,l+start.y)) #top
+        l+=space
+        
+        #print(points)
+
+    
+    return points
+
+def make_rect(start:XY, end:XY):
+    points = []
+    space = 1
+    points.append(start)
+    l=space
+    length = end.y - start.y
+    print(length)
+    while(l<=length):
+        
+        
+        points.append(XY(end.x,l+start.y)) #right
+        points.append(XY(start.x,l+start.y)) #left
+        
+        l+=space
+        
+        #print(points)
+    length = end.x - start.x
+    l = space
+    print(length)
+    while(l<=length):
+        points.append(XY(start.x + l,end.y)) #top
+        points.append(XY(start.x +l,start.y)) #bottom
+        
+        l+=space
+        
+        #print(points)
+
+    
+    return points
+
 def make_circ(center:XY,radius:float):
     dtheta = 10
     torad = math.pi/180
